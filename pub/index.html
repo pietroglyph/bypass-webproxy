@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head lang="en">
+        <!-- This Source Code Form is subject to the terms of the Mozilla Public
+       - License, v. 2.0. If a copy of the MPL was not distributed with this
+       - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+        <title>Bypass</title>
+         <meta charset="UTF-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        
+        <!-- Latest minified jQuery -->
+        <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
+
+        
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+        <!-- Give a fancy shmancy favicon -->
+        <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
+    </head>
+    <body>
+        <div class="container">
+            <div class="page-header">
+                <h1>Bypass</h1>
+            </div>
+            <div class="jumbotron">
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Enter URL to load..." id="input-url">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default disabled" type="button" id="input-go">Go!</button>
+                  </span>
+                </div><!-- /input-group -->
+                <br>
+            </div>
+        </div>
+        <script>
+            /*
+            var url = document.getElementById("input-url");
+            var gobutton = document.getElementById("input-go");
+            gobutton.onclick = function(){
+                loadURL(url.value);
+            };
+            $("#input-url").keypress(function(e) {
+                if (url.value != "") {
+                    $("#input-go").removeClass("disabled");
+                } else {
+                    $("#input-go").addClass("disabled");
+                }
+                if(e.which == 13 && url.value != "") {
+                    loadURL(url.value);
+                }
+            });
+            function loadURL(targurl) {
+                if (targurl != "") {
+                    window.location.href = window.location.href + "/p/?target=" + targurl;
+                }
+            }
+            */
+        </script>
+    </body>
+</html>

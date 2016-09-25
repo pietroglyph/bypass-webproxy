@@ -1,0 +1,6 @@
+{
+    "Host": "localhost",
+    "Port": "90",
+    "PublicDir": "C:/Users/Declan/Desktop/work/src/github.com/pietroglyph/bypass/pub",
+    "CacheStatic": false
+}
