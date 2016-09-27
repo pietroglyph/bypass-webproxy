@@ -1,6 +1,7 @@
 {
     "Host": "localhost",
     "Port": "80",
+    "ExternalURL": "localhost",
     "PublicDir": "/your/public/directory",
     "CacheStatic": false,
     "DisableCORS": true

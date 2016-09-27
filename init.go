@@ -19,6 +19,7 @@ type Configuration struct {
 	PublicDir   string
 	CacheStatic bool
 	DisableCORS bool
+	ExternalURL string
 }
 
 type reqHandler func(http.ResponseWriter, *http.Request) *reqError

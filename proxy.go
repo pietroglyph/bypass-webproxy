@@ -66,7 +66,6 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 			}
 		}
 	}
-	fmt.Println(prox.Params)
 	if !prox.Url.IsAbs() { // Is our URL absolute or not?
 		prox.Url.Scheme = "http"
 	} else { // If our URL is absolute, make sure the protocol is http(s)
@@ -114,7 +113,7 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		prox.Document.Find("*[href]").Each(func(i int, s *goquery.Selection) { // Modify all href attributes
 			origlink, exists := s.Attr("href")
 			if exists {
-				formattedurl, err := formatUrl(origlink, prox.UrlString, Config.Host)
+				formattedurl, err := formatUrl(origlink, prox.UrlString, Config.ExternalURL)
 				if err == nil {
 					s.SetAttr("href", formattedurl)
 				}
@@ -123,7 +122,7 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		prox.Document.Find("*[src]").Each(func(i int, s *goquery.Selection) { // Modify all src attributes
 			origlink, exists := s.Attr("src")
 			if exists {
-				formattedurl, err := formatUrl(origlink, prox.UrlString, Config.Host)
+				formattedurl, err := formatUrl(origlink, prox.UrlString, Config.ExternalURL)
 				if err == nil {
 					s.SetAttr("src", formattedurl)
 				}
