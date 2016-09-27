@@ -5,6 +5,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"errors"
 	"net/http"
 	"net/url"
@@ -60,7 +61,8 @@ func formatUrl(rawurl string, host string, proxyhost string) (string, error) { /
 			parsedurl.Scheme = "http"
 		}
 	}
-	formattedurl := "http://" + proxyhost + "/p/?target=" + parsedurl.String()
+	encodedurl := base64.StdEncoding.EncodeToString([]byte(parsedurl.String()))
+	formattedurl := "http://" + proxyhost + "/p/?u=" + encodedurl
 	return formattedurl, nil
 }
 
