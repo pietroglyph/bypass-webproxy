@@ -18,6 +18,7 @@ type Configuration struct {
 	Port        string
 	PublicDir   string
 	CacheStatic bool
+	DisableCORS bool
 }
 
 type reqHandler func(http.ResponseWriter, *http.Request) *reqError
@@ -63,7 +64,7 @@ func main() { // Main function
 
 func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allows us to pass errors back through our http handling functions
 	if e := fn(w, r); e != nil { // e is *appError, not os.Error.
-		fmt.Println(e.Error.Error())
+		fmt.Println(e.Error.Error(), e.Message)
 		if e.Code == 404 {
 			w.WriteHeader(404)
 			if FileCache["404"] != nil {
@@ -71,7 +72,7 @@ func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allo
 			} else {
 				file, err := ioutil.ReadFile(Config.PublicDir + "/404.html")
 				if err != nil {
-					http.Error(w, e.Message, e.Code)
+					http.Error(w, e.Message+"\n"+e.Error.Error(), e.Code)
 					return
 				}
 				io.WriteString(w, string(file))

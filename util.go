@@ -60,12 +60,16 @@ func formatUrl(rawurl string, host string, proxyhost string) (string, error) { /
 			parsedurl.Scheme = "http"
 		}
 	}
-	formattedurl := "https://" + proxyhost + "/p/?target=" + parsedurl.String()
+	formattedurl := "http://" + proxyhost + "/p/?target=" + parsedurl.String()
 	return formattedurl, nil
 }
 
 func copyHeaders(dest http.Header, source http.Header) { // Copy one http.Header to another http.Header
 	for header := range source {
-		dest.Add(header, source.Get(header))
+		if !Config.DisableCORS {
+			dest.Add(header, source.Get(header))
+		} else if header != "Content-Security-Policy" {
+			dest.Add(header, source.Get(header))
+		}
 	}
 }
