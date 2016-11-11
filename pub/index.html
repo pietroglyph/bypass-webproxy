@@ -34,18 +34,6 @@
                 "input-group-btn"><button class="btn btn-default disabled" id="input-go"
                 type="button">Go!</button></span>
             </div><!-- /input-group -->
-            <br>
-            <div class="panel panel-default" style="display: none;">
-                <div class="panel-heading">
-                    Settings
-                </div>
-                <div class="panel-body">
-                    <input aria-label="Strip JavaScript tags" data-key="stripjs" id="param"
-                    type="checkbox">Strip JavaScript tags<br>
-                    <input aria-label="Strip Meta tags" data-key="stripmeta" id="param" type=
-                    "checkbox">Strip Meta tags<br>
-                </div>
-            </div><br>
         </div>
     </div>
     <script>
@@ -65,19 +53,9 @@
                    }
                });
                function loadURL(targurl) {
-                   var params
-                   $("#param").each(function() {
-                       if ($( this ).attr("checked")) {
-                           chkstr = "true"
-                       } else {
-                           chkstr = "false"
-                       }
-                       params += $( this ).data("key") + ":" + chkstr
-                   })
                    if (targurl != "") {
                        var encodedURL = window.btoa(targurl); // Encode the URL in Base64
-                       var encodedParams = window.btoa(params); // Encode the URL in Base64
-                       window.location.href = window.location.href + "/p/?u=" + encodedURL + "&p=" + encodedParams;
+                       window.location.href = window.location.href + "/p/?u=" + encodedURL;
                    }
                }
     </script>
