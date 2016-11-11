@@ -39,7 +39,7 @@ func parseContentType(rawcontype string) (*ContentType, error) { // Parse a MIME
 	return &contentType, nil
 }
 
-func formatUrl(rawurl string, host string, proxyhost string) (string, error) { // Formats a non-absolute URL or one with missing information into a hopefully valid one
+func formatUri(rawurl string, host string, proxyhost string) (string, error) { // Formats a non-absolute URL or one with missing information into a hopefully valid one
 	parsedurl, err := url.Parse(rawurl)
 	if err != nil {
 		return "", errors.New("main: couldn't parse provided URL in order to format it")
