@@ -6,7 +6,6 @@ notifications:
 install:
   - "go get -d -v ./..."
   - "go get github.com/mitchellh/gox"
-  - "gox ./..."
 before_deploy:
   - "gox -output 'dist/{{.Dir}}/{{.OS}}-{{.Arch}}' -cgo"
 deploy:
