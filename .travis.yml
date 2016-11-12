@@ -1,8 +1,21 @@
 language: go
-
 go:
   - master
-
+env:
+  - "PATH=/home/travis/gopath/bin:$PATH"
+before_install:
+  - go get github.com/mitchellh/gox
+  - gox -build-toolchain
+  - go get github.com/tcnksm/ghr
+  - go get github.com/axw/gocov/gocov
+  - go get github.com/mattn/goveralls
+  - go get code.google.com/p/go.tools/cmd/cover
+script:
+  - go test -v -covermode=count -coverprofile=coverage.out ./...
+  - goveralls -coverprofile=coverage.out -service travis-ci -repotoken q3zkHeowdktnomqwhnfdWe9CX2sYCnlVm
+after_success:
+  - gox -output "dist/{{.OS}}_{{.Arch}}_{{.Dir}}"
+  - ghr --username tcnksm-sample --token 61846acf8ac1fc3bd6fbb7a432635d0adde2d41c --replace --prerelease --debug pre-release dist/
 install:
   - go get -u github.com/PuerkitoBio/goquery
   - go get -u github.com/kardianos/osext
