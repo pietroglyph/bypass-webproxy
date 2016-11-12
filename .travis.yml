@@ -8,7 +8,7 @@ install:
   - "go get github.com/mitchellh/gox"
   - "gox ./..."
 before_deploy:
-  - "gox -output "dist/{{.Dir}}/{{.OS}}-{{.Arch}}"
+  - "gox -output 'dist/{{.Dir}}/{{.OS}}-{{.Arch}}'"
 deploy:
   provider: releases
   api_key:
