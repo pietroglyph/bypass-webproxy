@@ -21,6 +21,7 @@ type Configuration struct { // The Configuration type holds configuration data
 	DisableCORS bool   // Boolean to strip CORS headers
 	ExternalURL string // External URL string for formatting proxied HTML
 	EnableTLS   bool   // Boolean to serve with TLS
+	Verbose     bool   // Boolean to disable logs of 404 errors
 }
 
 type reqHandler func(http.ResponseWriter, *http.Request) *reqError
@@ -42,6 +43,7 @@ func init() { // Init function
 	flag.BoolVar(&Config.DisableCORS, "cors", true, "strip Cross Origin Resource Policy headers")
 	flag.StringVar(&Config.ExternalURL, "exturl", Config.Host+":"+Config.Port, "external URL for formatting proxied HTML files to link back to the webproxy")
 	flag.BoolVar(&Config.EnableTLS, "tls", false, "enable serving with TLS (https), certificate is cert.pem and key is key.pem, place both in the directory your terminal instance is in")
+	flag.BoolVar(&Config.Verbose, "verbose", false, "enable printing 404 errors to STDOUT")
 }
 
 func main() { // Main function
@@ -78,10 +80,12 @@ func main() { // Main function
 }
 
 func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allows us to pass errors back through our http handling functions
-	if e := fn(w, r); e != nil { // e is *appError, not os.Error.
-		fmt.Println(e.Error.Error(), "\n", e.Message) // Print the error message
-		if e.Code == 404 {                            // Serve a pretty (potentially cached) file for 404 errors, if it exists
+	if e := fn(w, r); e != nil { // e is *appError, not os.Error
+		if e.Code == 404 { // Serve a pretty (potentially cached) file for 404 errors, if it exists
 			w.WriteHeader(404)
+			if Config.Verbose {
+				fmt.Println(e.Error.Error(), "\n", e.Message) // Print the error message
+			}
 			if FileCache["404"] != nil { // Serve the cached file if one exists
 				io.WriteString(w, string(FileCache["404"]))
 			} else { // Read a non-cached file from disk and serve it because there isn't a cached one
@@ -93,6 +97,7 @@ func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allo
 				io.WriteString(w, string(file))
 			}
 		} else { // If it's not a 404 error just serve a generic message
+			fmt.Println(e.Error.Error(), "\n", e.Message) // Print the error message
 			http.Error(w, e.Message+"\n"+e.Error.Error(), e.Code)
 		}
 
