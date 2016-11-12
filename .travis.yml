@@ -7,11 +7,13 @@ install:
   - "go get -d -v ./..."
   - "go get github.com/mitchellh/gox"
   - "gox ./..."
+before_deploy:
+  - "gox -output "dist/{{.Dir}}/{{.OS}}-{{.Arch}}"
 deploy:
   provider: releases
   api_key:
     secure: FwUmZORbVvrZ+NqebqpZSse9p1fdorV/uRpk5aK987cDFr+NzIh4GMTRdch6qOHqJSZ56GqnahS8lqeFiBoMnsNXIsI5VVUJZXORJPVIxUXFL+UDgU0tBB/DbIta1RfpLEW2YSrYJjFW1Mmlj9YDtLCmhaqfDzKjupyWv3Jj1vjJ1Hzwks2gJ/ye2C/DNZ1VOzWGLxo973ydvTrhJ6v7R3yifDzL3njZe/O+fjdpu5E+6jlYctHx7AVJjF6lywvxsepdcKFVHo3Hzyr7P2BcGEt0vTfH0xxnsLNZI0CuTsWp1yesY1EY5CyXDoKWrXf4JKrskBLpnqNabBhwm0GVkttsgYrv5lrS5+jXSRs82DgGbw3zkDAi80Dbd/sYqURiDqdMPW+OXcmGECinjFhRkXU2FH7GdRbUq1QWNckC9rt6C6v6VWGRX9gPyqlCuS9JTQrbXnhjynhLUkF7ynyhGbyhbJALmUi+CuzZR0X4BYCxOF+Ydy+m9iALaXd9J6PNx3hbzI83Sxxp3BAX7dvJhnmPD+X3x8lUK1x8irAznCWfGeEWPW8QW7eWoGwbAOiKpNw/lvTpgMTRJjLZ5Ssx+gLhnyBTfZO0RJTJI+7PEWPF3BP1B2iAoU1KukRNNmC2Z1WjtWKqpMWYZsUIKec353Vp6qDx6sjH+K6MjSeQ1vQ=
-  file: "bypass"
+  file: "dist/*"
   skip_cleanup: true
   on:
     repo: pietroglyph/Bypass-Webproxy
