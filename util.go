@@ -7,7 +7,6 @@ package main
 import (
 	"encoding/base64"
 	"errors"
-	"net/http"
 	"net/url"
 	"strings"
 )
@@ -19,12 +18,14 @@ type ContentType struct { // The ContentType type holds easily usable informatio
 }
 
 func parseContentType(rawcontype string) (*ContentType, error) { // Parse a MIME string into a ContentType struct
+	rawcontype = strings.ToLower(rawcontype)
 	var contentType ContentType
 	contentType.Parameters = make(map[string]string)
 	contype := strings.Split(rawcontype, " ")
 	contype[0] = strings.Replace(contype[0], ";", "", -1)
 	mimetype := strings.Split(contype[0], "/")
 	if len(mimetype) <= 1 {
+
 		return new(ContentType), errors.New("contype: malformed content-type MIME type provided")
 	}
 	if len(contype) > 1 {
@@ -64,16 +65,4 @@ func formatUri(rawurl string, host string, proxyhost string) (string, error) { /
 	encodedurl := base64.StdEncoding.EncodeToString([]byte(parsedurl.String()))
 	formattedurl := "http://" + proxyhost + "/p/?u=" + encodedurl
 	return formattedurl, nil
-}
-
-func copyHeaders(dest http.Header, source http.Header) { // Copy one http.Header to another http.Header
-	for header := range source {
-		if !Config.DisableCORS {
-			dest.Add(header, source.Get(header))
-		} else if header != "Content-Security-Policy" && header != "Content-Type" {
-			dest.Add(header, source.Get(header))
-		} else if header == "Content-Type" {
-			dest.Add(header, "text/html; charset=utf-8")
-		}
-	}
 }

@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	goenc "github.com/mattn/go-encoding"
+	goenc "github.com/pietroglyph/go-encoding"
 	// "golang.org/x/text/encoding"
 	// "golang.org/x/text/transform"
 )
@@ -86,8 +86,6 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		return &reqError{err, "Couldn't read returned body.", 500}
 	}
 
-	copyHeaders(resWriter.Header(), httpCliResp.Header) // Copy headers from response to our request from the server we are proxying
-
 	prox.ConType, err = parseContentType(httpCliResp.Header.Get("Content-Type")) // Get the MIME type of what we recieved from the Content-Type header
 	if err != nil {
 		prox.ConType, err = parseContentType(http.DetectContentType(prox.Body)) // Looks like we couldn't parse the Content-Type header, so we'll have to detect content type from the actual response body
@@ -96,7 +94,23 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		}
 	}
 
-	if prox.ConType.Parameters["charset"] == "" {
+	for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
+		if !Config.DisableCORS {
+			if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
+				resWriter.Header().Add(header, "text/html; charset=utf-8")
+			} else {
+				resWriter.Header().Add(header, httpCliResp.Header.Get(header))
+			}
+		} else if header != "Content-Security-Policy" && header != "Content-Type" {
+			resWriter.Header().Add(header, httpCliResp.Header.Get(header))
+		} else if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
+			resWriter.Header().Add(header, "text/html; charset=utf-8")
+		} else {
+			resWriter.Header().Add(header, httpCliResp.Header.Get(header))
+		}
+	} // TODO: This conditonal chain is a nightmare and should be fixed sometime
+
+	if prox.ConType.Parameters["charset"] == "" { // Make sure that we have a charset if the website doesn't provide one (which is fairly common)
 		tempConType, err := parseContentType(http.DetectContentType(prox.Body))
 		if err != nil {
 			fmt.Println(err.Error()) // Instead of failing we will just give the user a non-formatted page and print the error
@@ -108,18 +122,23 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 	if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" && prox.ConType.Parameters["charset"] != "" { // Does it say it's html with a valid charset
 		resReader := strings.NewReader(string(prox.Body))
 		if prox.ConType.Parameters["charset"] != "utf-8" {
-			decoder := goenc.GetEncoding(prox.ConType.Parameters["charset"]).NewDecoder()
-			prox.Document, err = goquery.NewDocumentFromReader(decoder.Reader(resReader)) // Parse the response from our target website
+			encoding := goenc.GetEncoding(prox.ConType.Parameters["charset"])
+			if encoding == nil {
+				return &reqError{nil, prox.ConType.Parameters["charset"] + " is an invalid encoding.", 400}
+			}
+			fmt.Println(encoding, prox.ConType.Parameters["charset"])
+			decoder := encoding.NewDecoder()
+			prox.Document, err = goquery.NewDocumentFromReader(decoder.Reader(resReader)) // Parse the response from our target website whose body has been freshly utf-8 encoded
 			if err != nil {                                                               // Looks like we can't parse this, let's just spit out the raw response
 				fmt.Fprint(resWriter, string(prox.Body))
-				fmt.Println(err.Error())
+				fmt.Println(err.Error(), prox.Url)
 				return nil
 			}
 		} else {
 			prox.Document, err = goquery.NewDocumentFromReader(resReader)
 			if err != nil { // Looks like we can't parse this, let's just spit out the raw response
 				fmt.Fprint(resWriter, string(prox.Body))
-				fmt.Println(err.Error())
+				fmt.Println(err.Error(), prox.Url)
 				return nil
 			}
 		}

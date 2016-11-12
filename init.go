@@ -83,7 +83,7 @@ func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allo
 	if e := fn(w, r); e != nil { // e is *appError, not os.Error
 		if e.Code == 404 { // Serve a pretty (potentially cached) file for 404 errors, if it exists
 			w.WriteHeader(404)
-			if Config.Verbose {
+			if Config.Verbose && e.Error != nil {
 				fmt.Println(e.Error.Error(), "\n", e.Message) // Print the error message
 			}
 			if FileCache["404"] != nil { // Serve the cached file if one exists
@@ -91,14 +91,23 @@ func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allo
 			} else { // Read a non-cached file from disk and serve it because there isn't a cached one
 				file, err := ioutil.ReadFile(Config.PublicDir + "/404.html")
 				if err != nil {
-					http.Error(w, e.Message+"\n"+e.Error.Error(), e.Code) // Serve a generic error message if the file isn't cahced and doesn't exist
+					if e.Error == nil {
+						http.Error(w, e.Message, e.Code) // Serve a generic error message if the file isn't cached and doesn't exist
+					} else {
+						http.Error(w, e.Message+"\n"+e.Error.Error(), e.Code) // Serve a generic error message if the file isn't cached and doesn't exist
+					}
 					return
 				}
 				io.WriteString(w, string(file))
 			}
 		} else { // If it's not a 404 error just serve a generic message
-			fmt.Println(e.Error.Error(), "\n", e.Message) // Print the error message
-			http.Error(w, e.Message+"\n"+e.Error.Error(), e.Code)
+			if e.Error == nil {
+				fmt.Println(e.Message)
+				http.Error(w, e.Message, e.Code) // Serve a generic error message if the file isn't cached and doesn't exist
+			} else {
+				fmt.Println(e.Error.Error(), "\n", e.Message)         // Print the error message
+				http.Error(w, e.Message+"\n"+e.Error.Error(), e.Code) // Serve a generic error message if the file isn't cached and doesn't exist
+			}
 		}
 
 	}
