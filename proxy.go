@@ -14,7 +14,9 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/djimenez/iconv-go"
+	goenc "github.com/mattn/go-encoding"
+	// "golang.org/x/text/encoding"
+	// "golang.org/x/text/transform"
 )
 
 type reqError struct {
@@ -106,16 +108,18 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 	if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" && prox.ConType.Parameters["charset"] != "" { // Does it say it's html with a valid charset
 		resReader := strings.NewReader(string(prox.Body))
 		if prox.ConType.Parameters["charset"] != "utf-8" {
-			resIconvReader, err := iconv.NewReader(resReader, prox.ConType.Parameters["charset"], "utf-8")
-			prox.Document, err = goquery.NewDocumentFromReader(resIconvReader) // Parse the response from our target website
-			if err != nil {                                                    // Looks like we can't parse this, let's just spit out the raw response
+			decoder := goenc.GetEncoding(prox.ConType.Parameters["charset"]).NewDecoder()
+			prox.Document, err = goquery.NewDocumentFromReader(decoder.Reader(resReader)) // Parse the response from our target website
+			if err != nil {                                                               // Looks like we can't parse this, let's just spit out the raw response
 				fmt.Fprint(resWriter, string(prox.Body))
+				fmt.Println(err.Error())
 				return nil
 			}
 		} else {
 			prox.Document, err = goquery.NewDocumentFromReader(resReader)
 			if err != nil { // Looks like we can't parse this, let's just spit out the raw response
 				fmt.Fprint(resWriter, string(prox.Body))
+				fmt.Println(err.Error())
 				return nil
 			}
 		}
