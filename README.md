@@ -4,9 +4,9 @@ A simple webproxy written in Go that uses Goquery to parse and modify proxied HT
 
 ## Dependencies
 
-+ [Goquery](github.com/PuerkitoBio/goquery)
-+ [osext](github.com/kardianos/osext)
-+ [iconv-go](github.com/djimenez/iconv-go)
++ [Goquery](https://github.com/PuerkitoBio/goquery)
++ [osext](https://github.com/kardianos/osext)
++ [iconv-go](https://github.com/djimenez/iconv-go)
 
 ## Building
 
