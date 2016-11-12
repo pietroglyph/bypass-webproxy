@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/djimenez/iconv-go"
 )
 
 type reqError struct {
@@ -74,18 +75,18 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		return &reqError{err, "Couldn't make a new http request.", 500}
 	}
 
-	cliResp, err := client.Do(request) // Actually do the http request
+	httpCliResp, err := client.Do(request) // Actually do the http request
 	if err != nil {
 		return &reqError{err, "Invalid URL, or server connectivity issue.", 500}
 	}
-	prox.Body, err = ioutil.ReadAll(cliResp.Body) // Read the response into another variable
+	prox.Body, err = ioutil.ReadAll(httpCliResp.Body) // Read the response into another variable
 	if err != nil {
 		return &reqError{err, "Couldn't read returned body.", 500}
 	}
 
-	copyHeaders(resWriter.Header(), cliResp.Header) // Copy over headers from the actual client to our new http request
+	copyHeaders(resWriter.Header(), httpCliResp.Header) // Copy headers from response to our request from the server we are proxying
 
-	prox.ConType, err = parseContentType(cliResp.Header.Get("Content-Type")) // Get the MIME type of what we recieved from the Content-Type header
+	prox.ConType, err = parseContentType(httpCliResp.Header.Get("Content-Type")) // Get the MIME type of what we recieved from the Content-Type header
 	if err != nil {
 		prox.ConType, err = parseContentType(http.DetectContentType(prox.Body)) // Looks like we couldn't parse the Content-Type header, so we'll have to detect content type from the actual response body
 		if err != nil {
@@ -93,12 +94,30 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		}
 	}
 
-	if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" { // Is it html
-		r := strings.NewReader(string(prox.Body))
-		prox.Document, err = goquery.NewDocumentFromReader(r) // Parse the response from our target website
-		if err != nil {                                       // Looks like we can't parse this, let's just spit out the raw response
-			fmt.Fprint(resWriter, string(prox.Body))
-			return nil
+	if prox.ConType.Parameters["charset"] == "" {
+		tempConType, err := parseContentType(http.DetectContentType(prox.Body))
+		if err != nil {
+			fmt.Println(err.Error()) // Instead of failing we will just give the user a non-formatted page and print the error
+		} else {
+			prox.ConType.Parameters["charset"] = tempConType.Parameters["charset"]
+		}
+	}
+
+	if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" && prox.ConType.Parameters["charset"] != "" { // Does it say it's html with a valid charset
+		resReader := strings.NewReader(string(prox.Body))
+		if prox.ConType.Parameters["charset"] != "utf-8" {
+			resIconvReader, err := iconv.NewReader(resReader, prox.ConType.Parameters["charset"], "utf-8")
+			prox.Document, err = goquery.NewDocumentFromReader(resIconvReader) // Parse the response from our target website
+			if err != nil {                                                    // Looks like we can't parse this, let's just spit out the raw response
+				fmt.Fprint(resWriter, string(prox.Body))
+				return nil
+			}
+		} else {
+			prox.Document, err = goquery.NewDocumentFromReader(resReader)
+			if err != nil { // Looks like we can't parse this, let's just spit out the raw response
+				fmt.Fprint(resWriter, string(prox.Body))
+				return nil
+			}
 		}
 		prox.Document.Find("*[href]").Each(func(i int, s *goquery.Selection) { // Modify all href attributes
 			origlink, exists := s.Attr("href")

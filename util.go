@@ -12,10 +12,10 @@ import (
 	"strings"
 )
 
-type ContentType struct {
-	Type       string
-	Subtype    string
-	Parameters map[string]string
+type ContentType struct { // The ContentType type holds easily usable information that is normally held as a string for indentifying MIME type and character encoding along with other information
+	Type       string            // The first part of the MIME type (eg. "text")
+	Subtype    string            // The second part of the MIME type (eg. "html")
+	Parameters map[string]string // Any extra information (eg. "charset=utf8") represeted as a map
 }
 
 func parseContentType(rawcontype string) (*ContentType, error) { // Parse a MIME string into a ContentType struct
@@ -70,8 +70,10 @@ func copyHeaders(dest http.Header, source http.Header) { // Copy one http.Header
 	for header := range source {
 		if !Config.DisableCORS {
 			dest.Add(header, source.Get(header))
-		} else if header != "Content-Security-Policy" {
+		} else if header != "Content-Security-Policy" && header != "Content-Type" {
 			dest.Add(header, source.Get(header))
+		} else if header == "Content-Type" {
+			dest.Add(header, "text/html; charset=utf-8")
 		}
 	}
 }

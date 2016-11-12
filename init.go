@@ -79,8 +79,8 @@ func main() { // Main function
 
 func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allows us to pass errors back through our http handling functions
 	if e := fn(w, r); e != nil { // e is *appError, not os.Error.
-		fmt.Println(e.Error.Error(), e.Message) // Print the error message
-		if e.Code == 404 {                      // Serve a pretty (potentially cached) file for 404 errors, if it exists
+		fmt.Println(e.Error.Error(), "\n", e.Message) // Print the error message
+		if e.Code == 404 {                            // Serve a pretty (potentially cached) file for 404 errors, if it exists
 			w.WriteHeader(404)
 			if FileCache["404"] != nil { // Serve the cached file if one exists
 				io.WriteString(w, string(FileCache["404"]))
