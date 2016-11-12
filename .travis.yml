@@ -6,4 +6,4 @@ go:
 install:
   - go get -u github.com/PuerkitoBio/goquery
   - go get -u github.com/kardianos/osext
-- go get -u github.com/djimenez/iconv-go
+  - go get -u github.com/djimenez/iconv-go
