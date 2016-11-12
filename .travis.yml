@@ -1,6 +1,8 @@
 language: go
 go:
 - master
+notifications:
+  email: false
 install:
   - "go get -d -v ./..."
   - "go build -v ./..."
