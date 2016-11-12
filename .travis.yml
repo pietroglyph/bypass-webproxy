@@ -5,7 +5,8 @@ notifications:
   email: false
 install:
   - "go get -d -v ./..."
-  - "go build -v ./..."
+  - "go get github.com/mitchellh/gox"
+  - "gox ./..."
 deploy:
   provider: releases
   api_key:
