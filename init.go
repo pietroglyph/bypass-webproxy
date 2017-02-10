@@ -22,6 +22,8 @@ type Configuration struct { // The Configuration type holds configuration data
 	ExternalURL string // External URL string for formatting proxied HTML
 	EnableTLS   bool   // Boolean to serve with TLS
 	Verbose     bool   // Boolean to disable logs of 404 errors
+	TLSCertPath string // Path to SSL Certificate
+	TLSKeyPath  string // Path to private key for certificate
 }
 
 type reqHandler func(http.ResponseWriter, *http.Request) *reqError
@@ -41,11 +43,13 @@ func init() { // Init function
 	flag.StringVar(&Config.PublicDir, "pubdir", folderPath+"/pub", "path to the static files the webserver should serve")
 	flag.BoolVar(&Config.CacheStatic, "cachestatic", true, "cache specific heavily used static files")
 	flag.BoolVar(&Config.DisableCORS, "cors", true, "strip Cross Origin Resource Policy headers")
-	flag.Parse() // Parse the flags first so that we can get Config.Host and Config.Port
-	flag.StringVar(&Config.ExternalURL, "exturl", Config.Host+":"+Config.Port, "external URL for formatting proxied HTML files to link back to the webproxy")
-	flag.BoolVar(&Config.EnableTLS, "tls", false, "enable serving with TLS (https), certificate is cert.pem and key is key.pem, place both in the directory your terminal instance is in")
+	flag.BoolVar(&Config.EnableTLS, "tls", false, "enable serving with TLS (https)")
 	flag.BoolVar(&Config.Verbose, "verbose", false, "enable printing 404 errors to STDOUT")
-	flag.Parse() // Parse the rest of the flags into their variables
+	flag.StringVar(&Config.TLSCertPath, "tls-cert", folderPath+"/cert.pem", "path to certificate file")
+	flag.StringVar(&Config.TLSKeyPath, "tls-key", folderPath+"/key.pem", "path to private key for certificate")
+	flag.Parse() // Parse flags so that we have Config.Host and Config.Port
+	flag.StringVar(&Config.ExternalURL, "exturl", Config.Host+":"+Config.Port, "external URL for formatting proxied HTML files to link back to the webproxy")
+	flag.Parse() // Parse the rest of the flags
 }
 
 func main() { // Main function
@@ -74,7 +78,8 @@ func main() { // Main function
 			panic(err)
 		}
 	} else if Config.EnableTLS {
-		err = http.ListenAndServeTLS(bind, "cert.pem", "key.pem", nil)
+		fmt.Println("Serving with TLS...")
+		err = http.ListenAndServeTLS(bind, Config.TLSCertPath, Config.TLSKeyPath, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -93,7 +98,7 @@ func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allo
 			} else { // Read a non-cached file from disk and serve it because there isn't a cached one
 				file, err := ioutil.ReadFile(Config.PublicDir + "/404.html")
 				if err != nil {
-					if e.Error == nil {
+					if e.Error == nil { // Is there an included Error type
 						http.Error(w, e.Message, e.Code) // Serve a generic error message if the file isn't cached and doesn't exist
 					} else {
 						http.Error(w, e.Message+"\n"+e.Error.Error(), e.Code) // Serve a generic error message if the file isn't cached and doesn't exist
