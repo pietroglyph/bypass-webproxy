@@ -94,21 +94,21 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		}
 	}
 
-	for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
-		if !Config.DisableCORS {
-			if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
-				resWriter.Header().Add(header, "text/html; charset=utf-8")
-			} else {
-				resWriter.Header().Add(header, httpCliResp.Header.Get(header))
-			}
-		} else if header != "Content-Security-Policy" && header != "Content-Type" {
-			resWriter.Header().Add(header, httpCliResp.Header.Get(header))
-		} else if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
-			resWriter.Header().Add(header, "text/html; charset=utf-8")
-		} else {
-			resWriter.Header().Add(header, httpCliResp.Header.Get(header))
-		}
-	} // TODO: This conditonal chain is a nightmare and should be fixed sometime
+	// for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
+	// 	if !Config.DisableCORS {
+	// 		if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
+	// 			resWriter.Header().Add(header, "text/html; charset=utf-8")
+	// 		} else {
+	// 			resWriter.Header().Add(header, httpCliResp.Header.Get(header))
+	// 		}
+	// 	} else if header != "Content-Security-Policy" && header != "Content-Type" {
+	// 		resWriter.Header().Add(header, httpCliResp.Header.Get(header))
+	// 	} else if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
+	// 		resWriter.Header().Add(header, "text/html; charset=utf-8")
+	// 	} else {
+	// 		resWriter.Header().Add(header, httpCliResp.Header.Get(header))
+	// 	}
+	// } // TODO: This conditonal chain is a nightmare and should be fixed sometime
 
 	if prox.ConType.Parameters["charset"] == "" { // Make sure that we have a charset if the website doesn't provide one (which is fairly common)
 		tempConType, err := parseContentType(http.DetectContentType(prox.Body))

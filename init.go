@@ -41,9 +41,11 @@ func init() { // Init function
 	flag.StringVar(&Config.PublicDir, "pubdir", folderPath+"/pub", "path to the static files the webserver should serve")
 	flag.BoolVar(&Config.CacheStatic, "cachestatic", true, "cache specific heavily used static files")
 	flag.BoolVar(&Config.DisableCORS, "cors", true, "strip Cross Origin Resource Policy headers")
+	flag.Parse() // Parse the flags first so that we can get Config.Host and Config.Port
 	flag.StringVar(&Config.ExternalURL, "exturl", Config.Host+":"+Config.Port, "external URL for formatting proxied HTML files to link back to the webproxy")
 	flag.BoolVar(&Config.EnableTLS, "tls", false, "enable serving with TLS (https), certificate is cert.pem and key is key.pem, place both in the directory your terminal instance is in")
 	flag.BoolVar(&Config.Verbose, "verbose", false, "enable printing 404 errors to STDOUT")
+	flag.Parse() // Parse the rest of the flags into their variables
 }
 
 func main() { // Main function

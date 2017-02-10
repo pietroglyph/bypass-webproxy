@@ -1,9 +1,0 @@
-{
-    "Host": "localhost",
-    "Port": "801",
-    "ExternalURL": "localhost",
-    "PublicDir": "C:/Users/Declan/Desktop/work/src/github.com/Pietroglyph/Bypass-Webproxy/pub",
-    "CacheStatic": false,
-    "DisableCORS": true,
-    "EnableTLS": false
-}

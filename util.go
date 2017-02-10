@@ -40,7 +40,7 @@ func parseContentType(rawcontype string) (*ContentType, error) { // Parse a MIME
 	return &contentType, nil
 }
 
-func formatUri(rawurl string, host string, proxyhost string) (string, error) { // Formats a non-absolute URL or one with missing information into a hopefully valid one
+func formatUri(rawurl string, host string, baseurl string) (string, error) { // Formats a non-absolute URL or one with missing information into a hopefully valid one
 	parsedurl, err := url.Parse(rawurl)
 	if err != nil {
 		return "", errors.New("main: couldn't parse provided URL in order to format it")
@@ -63,6 +63,13 @@ func formatUri(rawurl string, host string, proxyhost string) (string, error) { /
 		}
 	}
 	encodedurl := base64.StdEncoding.EncodeToString([]byte(parsedurl.String()))
-	formattedurl := "http://" + proxyhost + "/p/?u=" + encodedurl
-	return formattedurl, nil
+	parsedProxyHost, err := url.Parse(baseurl)
+	if err != nil {
+		return "", errors.New("main: couldn't parse provided base url")
+	}
+	parsedProxyHost.Path += "/p/"
+	q := parsedProxyHost.Query()
+	q.Add("u", encodedurl)
+	parsedProxyHost.RawQuery = q.Encode()
+	return parsedProxyHost.String(), nil
 }
