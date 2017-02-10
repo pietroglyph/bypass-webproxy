@@ -47,14 +47,18 @@ func init() { // Init function
 	flag.BoolVar(&Config.Verbose, "verbose", false, "enable printing 404 errors to STDOUT")
 	flag.StringVar(&Config.TLSCertPath, "tls-cert", folderPath+"/cert.pem", "path to certificate file")
 	flag.StringVar(&Config.TLSKeyPath, "tls-key", folderPath+"/key.pem", "path to private key for certificate")
-	flag.Parse() // Parse flags so that we have Config.Host and Config.Port
-	flag.StringVar(&Config.ExternalURL, "exturl", Config.Host+":"+Config.Port, "external URL for formatting proxied HTML files to link back to the webproxy")
+	flag.StringVar(&Config.ExternalURL, "exturl", "", "external URL for formatting proxied HTML files to link back to the webproxy")
 	flag.Parse() // Parse the rest of the flags
+
 }
 
 func main() { // Main function
 
 	var err error
+
+	if Config.ExternalURL == "" {
+		Config.ExternalURL = "http://" + Config.Host + ":" + Config.Port // If nothing is specified, use the defualt host and port
+	}
 
 	FileCache = make(map[string][]byte) // Make the map for caching files
 	if Config.CacheStatic == true {     // Cache certain static files if they exist and if Config.CacheStatic is set to true
