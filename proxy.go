@@ -86,7 +86,7 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		return &reqError{err, "Couldn't read returned body.", 500}
 	}
 
-	prox.ConType, err = parseContentType(httpCliResp.Header.Get("Content-Type")) // Get the MIME type of what we recieved from the Content-Type header
+	prox.ConType, err = parseContentType(httpCliResp.Header.Get("Content-Type")) // Get the MIME type of what we received from the Content-Type header
 	if err != nil {
 		prox.ConType, err = parseContentType(http.DetectContentType(prox.Body)) // Looks like we couldn't parse the Content-Type header, so we'll have to detect content type from the actual response body
 		if err != nil {
