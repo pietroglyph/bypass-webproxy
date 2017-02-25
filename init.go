@@ -13,7 +13,7 @@ import (
 	"net/http"
 )
 
-type Configuration struct { // The Configuration type holds configuration data
+type configuration struct { // The Configuration type holds configuration data
 	Host        string // Host string for the webserver to listen on
 	Port        string // Port string for the webserver to listen on
 	PublicDir   string // Path string to the directory to serve static files from
@@ -28,8 +28,8 @@ type Configuration struct { // The Configuration type holds configuration data
 
 type reqHandler func(http.ResponseWriter, *http.Request) *reqError
 
-var Config Configuration        // Configuration for the entire program
-var FileCache map[string][]byte // Files cached in the memory, stored as byte slices in a map that takes strings for the file names
+var config Configuration        // Configuration for the entire program
+var fileCache map[string][]byte // Files cached in the memory, stored as byte slices in a map that takes strings for the file names
 
 func init() { // Init function
 	folderPath, err := osext.ExecutableFolder() // Figure out where we are in the filesystem to make specifying the location of the public directory easier
