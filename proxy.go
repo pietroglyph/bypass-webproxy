@@ -30,12 +30,12 @@ type proxy struct { // The Proxy type holds request and response details for the
 	Url           *url.URL          // Formatted URL as the URL type
 	UrlString     string            // Formatted URL as a string
 	Body          []byte            // The request Body as a byte slice
-	ConType       *ContentType      // Content type as parsed into the ContentType type
+	ConType       *contentType      // Content type as parsed into the ContentType type
 	Document      *goquery.Document // The body parsed into the Document type
 	FormattedBody string            // The final formatted body, converted into the a string form Document
 }
 
-func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // Handle requests to /p/
+func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // Handle requests to /p/
 	defer func() { // Recover from a panic if one occurred
 		if err := recover(); err != nil {
 			fmt.Println(err)
@@ -43,7 +43,7 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		}
 	}()
 
-	var prox Proxy
+	var prox proxy
 	var err error
 
 	if reqHttp.URL.Query().Get("ueu") != "" {
@@ -64,7 +64,7 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 	if !prox.Url.IsAbs() { // Is our URL absolute or not?
 		prox.Url.Scheme = "http"
 	} else { // If our URL is absolute, make sure the protocol is http(s)
-		if prox.Url.Scheme != "http" || prox.Url.Scheme != "https" {
+		if strings.HasPrefix(prox.Url.Scheme, "http") {
 			prox.Url.Scheme = "http"
 		}
 	}
@@ -95,7 +95,7 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 	}
 
 	// for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
-	// 	if !Config.DisableCORS {
+	// 	if !config.DisableCORS {
 	// 		if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
 	// 			resWriter.Header().Add(header, "text/html; charset=utf-8")
 	// 		} else {
@@ -145,7 +145,7 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		prox.Document.Find("*[href]").Each(func(i int, s *goquery.Selection) { // Modify all href attributes
 			origlink, exists := s.Attr("href")
 			if exists {
-				formattedurl, err := formatUri(origlink, prox.UrlString, Config.ExternalURL)
+				formattedurl, err := formatUri(origlink, prox.UrlString, config.ExternalURL)
 				if err == nil {
 					s.SetAttr("href", formattedurl)
 					s.SetAttr("data-bypass-modified", "true")
@@ -155,15 +155,15 @@ func proxy(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // 
 		prox.Document.Find("*[src]").Each(func(i int, s *goquery.Selection) { // Modify all src attributes
 			origlink, exists := s.Attr("src")
 			if exists {
-				formattedurl, err := formatUri(origlink, prox.UrlString, Config.ExternalURL)
+				formattedurl, err := formatUri(origlink, prox.UrlString, config.ExternalURL)
 				if err == nil {
 					s.SetAttr("src", formattedurl)
 					s.SetAttr("data-bypass-modified", "true")
 				}
 			}
 		})
-		prox.Document.Find("head").AppendHtml(`<script type="text/javascript" src="//` + Config.ExternalURL + `/by-inj.js" data-bypass-modified="true"></script>`) // Inject our own JavaScript code
-		// prox.Document.Find("head").AppendHtml(`<base src="http://` + Config.ExternalURL + `/?ueu="></base>`) // Append a base URL as a backup for anything that we didn't catch and append
+		prox.Document.Find("head").AppendHtml(`<script type="text/javascript" src="//` + config.ExternalURL + `/by-inj.js" data-bypass-modified="true"></script>`) // Inject our own JavaScript code
+		// prox.Document.Find("head").AppendHtml(`<base src="http://` + config.ExternalURL + `/?ueu="></base>`) // Append a base URL as a backup for anything that we didn't catch and append
 		parsedhtml, err := goquery.OuterHtml(prox.Document.Selection)
 		if err != nil {
 			return &reqError{err, "Couldn't convert parsed document back to HTML.", 500}
@@ -195,16 +195,16 @@ func static(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { //
 	var err error
 
 	if reqHttp.URL.Path == "/" {
-		if FileCache["index"] != nil {
-			file = FileCache["index"]
+		if fileCache["index"] != nil {
+			file = fileCache["index"]
 		} else {
-			file, err = ioutil.ReadFile(Config.PublicDir + "/index.html")
+			file, err = ioutil.ReadFile(config.PublicDir + "/index.html")
 			if err != nil {
 				return &reqError{err, "File not found.", 404}
 			}
 		}
 	} else {
-		file, err = ioutil.ReadFile(Config.PublicDir + reqHttp.URL.Path)
+		file, err = ioutil.ReadFile(config.PublicDir + reqHttp.URL.Path)
 		if err != nil {
 			return &reqError{err, "File not found.", 404}
 		}

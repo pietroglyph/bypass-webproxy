@@ -11,33 +11,32 @@ import (
 	"strings"
 )
 
-type contentType struct { // The ContentType type holds easily usable information that is normally held as a string for indentifying MIME type and character encoding along with other information
+type contentType struct { // The contentType type holds easily usable information that is normally held as a string for indentifying MIME type and character encoding along with other information
 	Type       string            // The first part of the MIME type (eg. "text")
 	Subtype    string            // The second part of the MIME type (eg. "html")
 	Parameters map[string]string // Any extra information (eg. "charset=utf8") represeted as a map
 }
 
-func parseContentType(rawcontype string) (*ContentType, error) { // Parse a MIME string into a ContentType struct
+func parseContentType(rawcontype string) (*contentType, error) { // Parse a MIME string into a contentType struct
 	rawcontype = strings.ToLower(rawcontype)
-	var contentType ContentType
-	contentType.Parameters = make(map[string]string)
-	contype := strings.Split(rawcontype, " ")
-	contype[0] = strings.Replace(contype[0], ";", "", -1)
-	mimetype := strings.Split(contype[0], "/")
+	var conType contentType
+	conType.Parameters = make(map[string]string)
+	splitcontype := strings.Split(rawcontype, " ")
+	splitcontype[0] = strings.Replace(splitcontype[0], ";", "", -1)
+	mimetype := strings.Split(splitcontype[0], "/")
 	if len(mimetype) <= 1 {
-
-		return new(ContentType), errors.New("contype: malformed content-type MIME type provided")
+		return new(contentType), errors.New("contype: malformed content-type MIME type provided")
 	}
-	if len(contype) > 1 {
-		params := strings.Split(contype[1], ";")
+	if len(splitcontype) > 1 {
+		params := strings.Split(splitcontype[1], ";")
 		for it := range params {
 			splitparams := strings.Split(params[it], "=")
-			contentType.Parameters[splitparams[0]] = splitparams[1]
+			conType.Parameters[splitparams[0]] = splitparams[1]
 		}
 	}
-	contentType.Type = mimetype[0]
-	contentType.Subtype = mimetype[1]
-	return &contentType, nil
+	conType.Type = mimetype[0]
+	conType.Subtype = mimetype[1]
+	return &conType, nil
 }
 
 func formatUri(rawurl string, host string, baseurl string) (string, error) { // Formats a non-absolute URL or one with missing information into a hopefully valid one
@@ -46,7 +45,7 @@ func formatUri(rawurl string, host string, baseurl string) (string, error) { // 
 		return "", errors.New("main: couldn't parse provided URL in order to format it")
 	}
 	if parsedurl.IsAbs() {
-		if parsedurl.Scheme != "http" || parsedurl.Scheme != "https" {
+		if !strings.HasPrefix(parsedurl.Scheme, "http") {
 			parsedurl.Scheme = "http"
 		}
 	} else {
@@ -54,11 +53,11 @@ func formatUri(rawurl string, host string, baseurl string) (string, error) { // 
 		if err != nil {
 			return "", errors.New("main: couldn't parse provided host ( \"base\" ) in order to resolve a reference")
 		}
-		if base.Scheme != "http" || base.Scheme != "https" || base.Scheme == "" {
+		if !strings.HasPrefix(parsedurl.Scheme, "http") {
 			base.Scheme = "http"
 		}
 		parsedurl = base.ResolveReference(parsedurl)
-		if parsedurl.Scheme != "http" || parsedurl.Scheme != "https" || parsedurl.Scheme == "" {
+		if !strings.HasPrefix(parsedurl.Scheme, "http") {
 			parsedurl.Scheme = "http"
 		}
 	}
