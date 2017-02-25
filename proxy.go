@@ -25,7 +25,7 @@ type reqError struct {
 	Code    int
 }
 
-type Proxy struct { // The Proxy type holds request and response details for the proxy request
+type proxy struct { // The Proxy type holds request and response details for the proxy request
 	RawUrl        string            // Raw URL that is formatted into Url
 	Url           *url.URL          // Formatted URL as the URL type
 	UrlString     string            // Formatted URL as a string
