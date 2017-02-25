@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-type ContentType struct { // The ContentType type holds easily usable information that is normally held as a string for indentifying MIME type and character encoding along with other information
+type contentType struct { // The ContentType type holds easily usable information that is normally held as a string for indentifying MIME type and character encoding along with other information
 	Type       string            // The first part of the MIME type (eg. "text")
 	Subtype    string            // The second part of the MIME type (eg. "html")
 	Parameters map[string]string // Any extra information (eg. "charset=utf8") represeted as a map
