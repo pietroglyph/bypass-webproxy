@@ -57,7 +57,7 @@ func main() { // Main function
 	var err error
 
 	if Config.ExternalURL == "" {
-		Config.ExternalURL = "http://" + Config.Host + ":" + Config.Port // If nothing is specified, use the defualt host and port
+		Config.ExternalURL = "http://" + Config.Host + ":" + Config.Port // If nothing is specified, use the default host and port
 	}
 
 	FileCache = make(map[string][]byte) // Make the map for caching files
