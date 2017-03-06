@@ -94,22 +94,6 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 		}
 	}
 
-	// for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
-	// 	if !config.DisableCORS {
-	// 		if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
-	// 			resWriter.Header().Add(header, "text/html; charset=utf-8")
-	// 		} else {
-	// 			resWriter.Header().Add(header, httpCliResp.Header.Get(header))
-	// 		}
-	// 	} else if header != "Content-Security-Policy" && header != "Content-Type" {
-	// 		resWriter.Header().Add(header, httpCliResp.Header.Get(header))
-	// 	} else if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
-	// 		resWriter.Header().Add(header, "text/html; charset=utf-8")
-	// 	} else {
-	// 		resWriter.Header().Add(header, httpCliResp.Header.Get(header))
-	// 	}
-	// } // TODO: This conditonal chain is a nightmare and should be fixed sometime
-
 	if prox.ConType.Parameters["charset"] == "" { // Make sure that we have a charset if the website doesn't provide one (which is fairly common)
 		tempConType, err := parseContentType(http.DetectContentType(prox.Body))
 		if err != nil {
@@ -169,6 +153,30 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 			return &reqError{err, "Couldn't convert parsed document back to HTML.", 500}
 		}
 		prox.FormattedBody = parsedhtml
+
+		for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
+			if !config.DisableCORS {
+				if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
+					resWriter.Header().Add(header, "text/html; charset=utf-8")
+				} else {
+					resWriter.Header().Add(header, httpCliResp.Header.Get(header))
+				}
+			} else {
+				switch header {
+				case "Content-Security-Policy":
+					resWriter.Header().Del(header)
+				case "Content-Type":
+					if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
+						resWriter.Header().Add(header, "text/html; charset=utf-8")
+					}
+				case "Content-Length":
+					resWriter.Header().Add(header, string(len([]byte(prox.FormattedBody)))) // Get length in bytes of the formatted converted body
+				default:
+					resWriter.Header().Add(header, httpCliResp.Header.Get(header))
+				}
+			}
+		}
+
 		_, err = fmt.Fprint(resWriter, prox.FormattedBody)
 		if err != nil {
 			return &reqError{err, "Couldn't write content to response.", 500}
