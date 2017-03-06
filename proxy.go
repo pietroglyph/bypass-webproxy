@@ -64,7 +64,7 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 	if !prox.Url.IsAbs() { // Is our URL absolute or not?
 		prox.Url.Scheme = "http"
 	} else { // If our URL is absolute, make sure the protocol is http(s)
-		if strings.HasPrefix(prox.Url.Scheme, "http") {
+		if !strings.HasPrefix(prox.Url.Scheme, "http") {
 			prox.Url.Scheme = "http"
 		}
 	}
