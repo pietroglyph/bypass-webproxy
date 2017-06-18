@@ -36,28 +36,43 @@
             </div><!-- /input-group -->
         </div>
     </div>
+    <iframe sandbox style="display: none;" id="contentFrame"></iframe>
     <script>
+	       var hidden = true
                var url = document.getElementById("input-url");
                var gobutton = document.getElementById("input-go");
                gobutton.onclick = function(){
                    loadURL(url.value);
                };
+	       // Disable the button if there isn't anything in the input box
                $("#input-url").keypress(function(e) {
                    if (url.value != "") {
                        $("#input-go").removeClass("disabled");
                    } else {
                        $("#input-go").addClass("disabled");
                    }
+		   // Load the URL when the enter key is pressed
                    if(e.which == 13 && url.value != "") {
                        loadURL(url.value);
                    }
                });
                function loadURL(targurl) {
                    if (targurl != "") {
+		       if (hidden) {
+		           hidden = false;
+			   $(".page-header").slideUp(500, function() {$(".jumbotron").css({backgroundColor: "rgba(0,0,0,0)", padding: "0px", marginBottom: "2px"}); $("#contentFrame").height($( window ).height()-$(".container").height()-1);}); // Get rid of the header, then make the jumbotron small
+                           $("#contentFrame").css({width: "100%", height: "100%", display: "block", border: "none", borderTop: "1px black solid"});
+		       }
                        var encodedURL = window.btoa(targurl); // Encode the URL in Base64
-                       window.location.href = window.location.href + "/p/?u=" + encodedURL;
+                       $("#contentFrame").attr("src", window.location.protocol + "//" + window.location.host + "/p/?u=" + encodedURL);
                    }
                }
+
+	       $( window ).resize(function() {
+		       if (!hidden) {
+			       $("#contentFrame").height($( window ).height()-$(".container").height()-1)
+		       }
+	       });
     </script>
 </body>
 </html>

@@ -14,16 +14,17 @@ import (
 )
 
 type configuration struct { // The configuration type holds configuration data
-	Host        string // Host string for the webserver to listen on
-	Port        string // Port string for the webserver to listen on
-	PublicDir   string // Path string to the directory to serve static files from
-	CacheStatic bool   // Boolean to enable or disable file caching
-	DisableCORS bool   // Boolean to strip CORS headers
-	ExternalURL string // External URL string for formatting proxied HTML
-	EnableTLS   bool   // Boolean to serve with TLS
-	Verbose     bool   // Boolean to disable logs of 404 errors
-	TLSCertPath string // Path to SSL Certificate
-	TLSKeyPath  string // Path to private key for certificate
+	Host         string // Host string for the webserver to listen on
+	Port         string // Port string for the webserver to listen on
+	PublicDir    string // Path string to the directory to serve static files from
+	CacheStatic  bool   // Boolean to enable or disable file caching
+	DisableCORS  bool   // Boolean to strip CORS headers
+	AllowFraming bool   // Boolean to strip X-Frame-Options headers
+	ExternalURL  string // External URL string for formatting proxied HTML
+	EnableTLS    bool   // Boolean to serve with TLS
+	Verbose      bool   // Boolean to disable logs of 404 errors
+	TLSCertPath  string // Path to SSL Certificate
+	TLSKeyPath   string // Path to private key for certificate
 }
 
 type reqHandler func(http.ResponseWriter, *http.Request) *reqError
@@ -48,6 +49,7 @@ func init() { // Init function
 	flag.StringVar(&config.TLSCertPath, "tls-cert", folderPath+"/cert.pem", "path to certificate file")
 	flag.StringVar(&config.TLSKeyPath, "tls-key", folderPath+"/key.pem", "path to private key for certificate")
 	flag.StringVar(&config.ExternalURL, "exturl", "", "external URL for formatting proxied HTML files to link back to the webproxy")
+	flag.BoolVar(&config.AllowFraming, "framing", true, "strip Frame Options headers to allow framing (if disabled this will break pub/index.html")
 	flag.Parse() // Parse the rest of the flags
 
 }

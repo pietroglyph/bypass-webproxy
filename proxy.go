@@ -170,6 +170,10 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 				if !config.DisableCORS {
 					resWriter.Header().Del(header)
 				}
+			case "X-Frame-Options":
+				if !config.AllowFraming {
+					resWriter.Header().Del(header)
+				}
 			case "Content-Type":
 				if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
 					resWriter.Header().Set(header, "text/html; charset=utf-8")
@@ -192,6 +196,10 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 				if !config.DisableCORS {
 					resWriter.Header().Del(header)
 				}
+			case "X-Frame-Options":
+				if !config.AllowFraming {
+					resWriter.Header().Del(header)
+				}
 			case "Content-Type":
 				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
 			case "Content-Length":
@@ -202,7 +210,7 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 		}
 
 		replFunc := func(origUri string) string {
-			submatch := urlRegexp.FindStringSubmatch(origUri)[1] // This is how we get the regex's capture group (we get google.com out of url("google.com)
+			submatch := urlRegexp.FindStringSubmatch(origUri)[1]                 // This is how we get the regex's capture group (we get google.com out of url("google.com)
 			fUri, err := formatUri(submatch, prox.UrlString, config.ExternalURL) // Fully format the URI
 			fmt.Println(origUri)
 			if err != nil {
@@ -222,6 +230,10 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 			switch header {
 			case "Content-Security-Policy":
 				if !config.DisableCORS {
+					resWriter.Header().Del(header)
+				}
+			case "X-Frame-Options":
+				if !config.AllowFraming {
 					resWriter.Header().Del(header)
 				}
 			case "Content-Type":
