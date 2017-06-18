@@ -5,18 +5,16 @@
 package main
 
 import (
-	//"errors"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	goenc "github.com/mattn/go-encoding"
-	// "golang.org/x/text/encoding"
-	// "golang.org/x/text/transform"
 )
 
 type reqError struct {
@@ -35,6 +33,8 @@ type proxy struct { // The Proxy type holds request and response details for the
 	FormattedBody string            // The final formatted body, converted into the a string form Document
 }
 
+var urlRegexp *regexp.Regexp = regexp.MustCompile(`url(?:\(['"]?)(.*?)(?:['"]?\))`) // Regular expression for matching "url()" contents in CSS
+
 func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // Handle requests to /p/
 	defer func() { // Recover from a panic if one occurred
 		if err := recover(); err != nil {
@@ -46,12 +46,12 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 	var prox proxy
 	var err error
 
-		urldec, err := base64.StdEncoding.DecodeString(reqHttp.URL.Query().Get("u"))
-		if err != nil {
-			return &reqError{err, "Couldn't decode provided URL parameter.", 400}
-		}
+	urldec, err := base64.StdEncoding.DecodeString(reqHttp.URL.Query().Get("u"))
+	if err != nil {
+		return &reqError{err, "Couldn't decode provided URL parameter.", 400}
+	}
 
-		prox.RawUrl = string(urldec) // Get the value from the url key of a posted form
+	prox.RawUrl = string(urldec) // Get the value from the url key of a posted form
 
 	prox.Url, err = url.Parse(prox.RawUrl) // Parse the raw URL value we were given into somthing we can work with
 	if err != nil {
@@ -185,6 +185,38 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 		if err != nil {
 			return &reqError{err, "Couldn't write content to response.", 500}
 		}
+	} else if prox.ConType.Type == "text" && prox.ConType.Subtype == "css" {
+		for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
+			switch header {
+			case "Content-Security-Policy":
+				if !config.DisableCORS {
+					resWriter.Header().Del(header)
+				}
+			case "Content-Type":
+				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
+			case "Content-Length":
+				resWriter.Header().Set(header, string(len(prox.Body))) // Get length in bytes of the formatted converted body
+			default:
+				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
+			}
+		}
+
+		replFunc := func(origUri string) string {
+			submatch := urlRegexp.FindStringSubmatch(origUri)[1] // This is how we get the regex's capture group (we get google.com out of url("google.com)
+			fUri, err := formatUri(submatch, prox.UrlString, config.ExternalURL) // Fully format the URI
+			fmt.Println(origUri)
+			if err != nil {
+				fmt.Println(err)
+				return origUri // If we can't format it just return the original
+			}
+			return "url('" + fUri + "')" // We also need to add the url() part back in
+		}
+		replacedBody := urlRegexp.ReplaceAllStringFunc(string(prox.Body), replFunc)
+		_, err = fmt.Fprint(resWriter, replacedBody)
+		if err != nil {
+			return &reqError{err, "Couldn't write content to response.", 500}
+		}
+
 	} else { // It's not html apparently, just give the raw response
 		for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
 			switch header {
