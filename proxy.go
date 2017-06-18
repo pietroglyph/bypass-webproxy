@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	goenc "github.com/pietroglyph/go-encoding"
+	goenc "github.com/mattn/go-encoding"
 	// "golang.org/x/text/encoding"
 	// "golang.org/x/text/transform"
 )
@@ -46,16 +46,13 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 	var prox proxy
 	var err error
 
-	if reqHttp.URL.Query().Get("ueu") != "" {
-		prox.RawUrl = reqHttp.URL.Query().Get("ueu")
-	} else {
 		urldec, err := base64.StdEncoding.DecodeString(reqHttp.URL.Query().Get("u"))
 		if err != nil {
 			return &reqError{err, "Couldn't decode provided URL parameter.", 400}
 		}
 
 		prox.RawUrl = string(urldec) // Get the value from the url key of a posted form
-	}
+
 	prox.Url, err = url.Parse(prox.RawUrl) // Parse the raw URL value we were given into somthing we can work with
 	if err != nil {
 		return &reqError{err, "Couldn't parse provided URL.", 400}
@@ -74,23 +71,26 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 
 	request, err := http.NewRequest("GET", prox.UrlString, nil) // Make a new http GET request
 	if err != nil {
-		return &reqError{err, "Couldn't make a new http request.", 500}
+		return &reqError{err, "Couldn't make a new http request with provided URL.", 400}
 	}
+
+	// Use the client's User-Agent
+	request.Header.Set("User-Agent", reqHttp.Header.Get("User-Agent"))
 
 	httpCliResp, err := client.Do(request) // Actually do the http request
 	if err != nil {
-		return &reqError{err, "Invalid URL, or server connectivity issue.", 500}
+		return &reqError{err, "Invalid URL, or server connectivity issue.", 400}
 	}
 	prox.Body, err = ioutil.ReadAll(httpCliResp.Body) // Read the response into another variable
 	if err != nil {
-		return &reqError{err, "Couldn't read returned body.", 500}
+		return &reqError{err, "Couldn't read returned body.", 400}
 	}
 
 	prox.ConType, err = parseContentType(httpCliResp.Header.Get("Content-Type")) // Get the MIME type of what we received from the Content-Type header
 	if err != nil {
 		prox.ConType, err = parseContentType(http.DetectContentType(prox.Body)) // Looks like we couldn't parse the Content-Type header, so we'll have to detect content type from the actual response body
 		if err != nil {
-			return &reqError{err, "Couldn't parse provided or detected content-type of document.", 500}
+			return &reqError{err, "Couldn't parse provided or detected content-type of document.", 400}
 		}
 	}
 
@@ -146,8 +146,18 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 				}
 			}
 		})
-		prox.Document.Find("head").AppendHtml(`<script type="text/javascript" src="//` + config.ExternalURL + `/by-inj.js" data-bypass-modified="true"></script>`) // Inject our own JavaScript code
-		// prox.Document.Find("head").AppendHtml(`<base src="http://` + config.ExternalURL + `/?ueu="></base>`) // Append a base URL as a backup for anything that we didn't catch and append
+
+		// prox.Document.Find("head").AppendHtml(`<script type="text/javascript" src="//` + config.ExternalURL + `/by-inj.js" data-bypass-modified="true"></script>`) // Inject our own JavaScript code
+
+		// Just get the scheme and host (eg. https://github.com)
+		// remoteBaseUrl := url.URL{
+		//	Scheme: prox.Url.Scheme,
+		//	Host: prox.Url.Host,
+		// }
+
+		// encodedUrl := base64.StdEncoding.EncodeToString(string(remoteBaseUrl))
+
+		// prox.Document.Find("head").AppendHtml(`<base src="` + config.ExternalURL + `/p/`+encodedUrl+`"></base>`) // Append a base URL as a backup for anything that we didn't catch and append
 		parsedhtml, err := goquery.OuterHtml(prox.Document.Selection)
 		if err != nil {
 			return &reqError{err, "Couldn't convert parsed document back to HTML.", 500}
@@ -155,25 +165,19 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 		prox.FormattedBody = parsedhtml
 
 		for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
-			if !config.DisableCORS {
-				if header == "Content-Type" && prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
-					resWriter.Header().Add(header, "text/html; charset=utf-8")
-				} else {
-					resWriter.Header().Add(header, httpCliResp.Header.Get(header))
-				}
-			} else {
-				switch header {
-				case "Content-Security-Policy":
+			switch header {
+			case "Content-Security-Policy":
+				if !config.DisableCORS {
 					resWriter.Header().Del(header)
-				case "Content-Type":
-					if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
-						resWriter.Header().Add(header, "text/html; charset=utf-8")
-					}
-				case "Content-Length":
-					resWriter.Header().Add(header, string(len([]byte(prox.FormattedBody)))) // Get length in bytes of the formatted converted body
-				default:
-					resWriter.Header().Add(header, httpCliResp.Header.Get(header))
 				}
+			case "Content-Type":
+				if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" {
+					resWriter.Header().Set(header, "text/html; charset=utf-8")
+				}
+			case "Content-Length":
+				resWriter.Header().Set(header, string(len([]byte(prox.FormattedBody)))) // Get length in bytes of the formatted converted body
+			default:
+				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
 			}
 		}
 
@@ -182,6 +186,21 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 			return &reqError{err, "Couldn't write content to response.", 500}
 		}
 	} else { // It's not html apparently, just give the raw response
+		for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
+			switch header {
+			case "Content-Security-Policy":
+				if !config.DisableCORS {
+					resWriter.Header().Del(header)
+				}
+			case "Content-Type":
+				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
+			case "Content-Length":
+				resWriter.Header().Set(header, string(len(prox.Body))) // Get length in bytes of the formatted converted body
+			default:
+				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
+			}
+		}
+
 		_, err = fmt.Fprint(resWriter, string(prox.Body))
 		if err != nil {
 			return &reqError{err, "Couldn't write content to response.", 500}
