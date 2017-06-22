@@ -1,78 +1,160 @@
 <!DOCTYPE html>
 <html>
+
 <head lang="en">
-    <!-- This Source Code Form is subject to the terms of the Mozilla Public
+  <!-- This Source Code Form is subject to the terms of the Mozilla Public
        - License, v. 2.0. If a copy of the MPL was not distributed with this
        - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-    <title>Bypass</title>
-    <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1, maximum-scale=1" name=
-    "viewport"><!-- Latest compiled and minified CSS -->
-    <link crossorigin="anonymous" href=
-    "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-    integrity=
-    "sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" rel=
-    "stylesheet"><!-- Latest minified jQuery -->
+  <title>Bypass</title>
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport">
+  <!-- Latest compiled and minified CSS -->
+  <link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" rel="stylesheet">
+  <!-- Latest minified jQuery -->
 
-    <script src="https://code.jquery.com/jquery-3.1.0.min.js">
-    </script><!-- Latest compiled and minified JavaScript -->
+  <script src="https://code.jquery.com/jquery-3.1.0.min.js">
+  </script>
+  <!-- Latest compiled and minified JavaScript -->
 
-    <script src=
-    "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
-    </script><!-- Give a fancy shmancy favicon -->
-    <link href='/favicon.png' rel='shortcut icon' type='image/x-icon'>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
+  </script>
+  <!-- Give a fancy shmancy favicon -->
+  <link href='/favicon.png' rel='shortcut icon' type='image/x-icon'>
+  <style>
+    .form-group.url {
+      width: 40%;
+    }
+
+    .form-group.options {
+      width: 59%;
+    }
+
+    .input-group-btn {
+      width: 0px !important;
+    }
+
+    .btn.options {
+      width: 20%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .input-group {
+      width: 100%;
+    }
+
+    .btn-group {
+      width: 100%;
+    }
+  </style>
 </head>
-<body>
-    <div class="container">
-        <div class="page-header">
-            <h1>Bypass</h1>
-        </div>
-        <div class="jumbotron">
-            <div class="input-group">
-                <input class="form-control" id="input-url" placeholder=
-                "Enter URL to load..." name="destinaion" type="url"> <span class=
-                "input-group-btn"><button class="btn btn-default disabled" id="input-go"
-                type="button">Go!</button></span>
-            </div><!-- /input-group -->
-        </div>
-    </div>
-    <iframe sandbox style="display: none;" id="contentFrame"></iframe>
-    <script>
-	       var hidden = true
-               var url = document.getElementById("input-url");
-               var gobutton = document.getElementById("input-go");
-               gobutton.onclick = function(){
-                   loadURL(url.value);
-               };
-	       // Disable the button if there isn't anything in the input box
-               $("#input-url").keypress(function(e) {
-                   if (url.value != "") {
-                       $("#input-go").removeClass("disabled");
-                   } else {
-                       $("#input-go").addClass("disabled");
-                   }
-		   // Load the URL when the enter key is pressed
-                   if(e.which == 13 && url.value != "") {
-                       loadURL(url.value);
-                   }
-               });
-               function loadURL(targurl) {
-                   if (targurl != "") {
-		       if (hidden) {
-		           hidden = false;
-			   $(".page-header").slideUp(500, function() {$(".jumbotron").css({backgroundColor: "rgba(0,0,0,0)", padding: "0px", marginBottom: "2px"}); $("#contentFrame").height($( window ).height()-$(".container").height()-1);}); // Get rid of the header, then make the jumbotron small
-                           $("#contentFrame").css({width: "100%", height: "100%", display: "block", border: "none", borderTop: "1px black solid"});
-		       }
-                       var encodedURL = window.btoa(targurl); // Encode the URL in Base64
-                       $("#contentFrame").attr("src", window.location.protocol + "//" + window.location.host + "/p/?u=" + encodedURL);
-                   }
-               }
 
-	       $( window ).resize(function() {
-		       if (!hidden) {
-			       $("#contentFrame").height($( window ).height()-$(".container").height()-1)
-		       }
-	       });
-    </script>
+<body>
+  <div class="container-fluid" id="main-container">
+    <div class="page-header">
+      <h1>Bypass</h1>
+    </div>
+    <div class="jumbotron">
+      <form class="form-inline">
+        <div class="form-group url">
+          <div class="input-group">
+            <input class="form-control" id="input-url" placeholder="Enter URL to load..." name="destinaion" type="url"> <span class="input-group-btn"><button class="btn btn-default disabled" id="input-go"
+                type="button">Go!</button></span>
+          </div>
+          <!-- /input-group -->
+        </div>
+        <div class="form-group options">
+          <div class="btn-group" data-toggle="buttons">
+            <label class="btn btn-default options">
+	  		<input type="checkbox" autocomplete="off" data-attr-value="allow-scripts" id="opt">&nbsp;Enable&nbsp;Scripts
+  		</label>
+            <label class="btn btn-default options">
+    			<input type="checkbox" autocomplete="off" data-attr-value="allow-popups" id="opt">&nbsp;Enable&nbsp;Popups
+  		</label>
+            <label class="btn btn-default options">
+	  		<input type="checkbox" autocomplete="off" data-attr-value="allow-pointer-lock" id="opt">&nbsp;Enable&nbsp;Pointer Lock
+  		</label>
+            <label class="btn btn-default options">
+			<input type="checkbox" autocomplete="off" data-attr-value="allow-forms" id="opt">&nbsp;Enable&nbsp;Form&nbsp;Submission
+    </label>
+            <label class="btn btn-default options">
+<input type="checkbox" autocomplete="off" data-attr-value="allow-top-navigation" id="opt">&nbsp;Enable&nbsp;Top&nbsp;Navigation
+      </label>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <iframe sandbox style="display: none;" id="content-frame"></iframe>
+  <script>
+    var hidden = true
+    var sandboxAttrState = {}
+    $(document).ready(function() { // Register callback's once we're ready
+      var url = document.getElementById("input-url");
+      var gobutton = document.getElementById("input-go");
+      gobutton.onclick = function() {
+        loadURL(url.value);
+      };
+      // Disable the button if there isn't anything in the input box
+      $("#input-url").keypress(function(e) {
+        if (url.value != "") {
+          $("#input-go").removeClass("disabled");
+        } else {
+          $("#input-go").addClass("disabled");
+        }
+        // Load the URL when the enter key is pressed
+        if (e.which == 13 && url.value != "") {
+          loadURL(url.value);
+        }
+      });
+
+      // Keep the iframe sized to fit below the header seamlessly (without non-iframe overflow)
+      $(window).resize(function() {
+        if (!hidden) {
+          $("#content-frame").height($(window).height() - $("#main-container").height() - 1)
+        }
+      });
+
+      // Detect anything with the ID opt getting changed (checked/unchecked)
+      $("*#opt").change(function() {
+        sandboxAttrState[$(this).data("attr-value")] = this.checked // sandboxAttrState keeps track of the value of these
+        var attrString = ""
+        // Serialize the entire sandboxAttrState for the sandbox attribute of the iframe
+        for (var key in sandboxAttrState) {
+          if (sandboxAttrState.hasOwnProperty(key) && sandboxAttrState[key]) { // hasOwnProperty is because JavaScript is weakly typed and we could get a type we don't want
+            attrString += key + " "
+          }
+        }
+        // Totally reset the sandbox attribue to our new serialized value
+        $("#content-frame").attr("sandbox", attrString)
+      });
+    });
+
+
+    function loadURL(targurl) {
+      if (targurl != "") {
+        if (hidden) {
+          hidden = false;
+          $(".page-header").slideUp(500, function() {
+            $(".jumbotron").css({
+              backgroundColor: "rgba(0,0,0,0)",
+              padding: "0px",
+              marginBottom: "2px"
+            });
+            $("#content-frame").height($(window).height() - $("#main-container").height() - 1);
+          }); // Get rid of the header, then make the jumbotron small once that's done
+          $("#content-frame").css({
+            width: "100%",
+            display: "block",
+            border: "none",
+          });
+        }
+        var encodedURL = window.btoa(targurl); // Encode the URL in Base64
+        // This makes a number of assumptions, and it would probably be better for the proxy to replace a value in here, but it's ok for our purposes
+        $("#content-frame").attr("src", window.location.protocol + "//" + window.location.host + "/p/?u=" + encodedURL);
+      }
+    }
+  </script>
 </body>
+
 </html>
