@@ -58,15 +58,15 @@
       <form class="form-inline">
         <div class="form-group url">
           <div class="input-group">
-            <input class="form-control" id="input-url" placeholder="Enter URL to load..." name="destinaion" type="url"> <span class="input-group-btn"><button class="btn btn-default disabled" id="input-go"
+            <input class="form-control" id="input-url" placeholder="Enter URL to load..." type="url" required><span class="input-group-btn"><button class="btn btn-default disabled" id="input-go"
                 type="button">Go!</button></span>
           </div>
           <!-- /input-group -->
         </div>
         <div class="form-group options">
           <div class="btn-group" data-toggle="buttons">
-            <label class="btn btn-default options">
-	  		<input type="checkbox" autocomplete="off" data-attr-value="allow-scripts" id="opt">&nbsp;Enable&nbsp;Scripts
+            <label class="btn btn-default options active">
+	  		<input type="checkbox" autocomplete="off" data-attr-value="allow-scripts" id="opt" checked>&nbsp;Enable&nbsp;Scripts
   		</label>
             <label class="btn btn-default options">
     			<input type="checkbox" autocomplete="off" data-attr-value="allow-popups" id="opt">&nbsp;Enable&nbsp;Popups
@@ -88,13 +88,16 @@
   <iframe sandbox style="display: none;" id="content-frame"></iframe>
   <script>
     var hidden = true
-    var sandboxAttrState = {}
+    var sandboxAttrState = {
+      "allow-scripts": true
+    }
     $(document).ready(function() { // Register callback's once we're ready
       var url = document.getElementById("input-url");
-      var gobutton = document.getElementById("input-go");
-      gobutton.onclick = function() {
-        loadURL(url.value);
-      };
+
+      // Load the URL in the iframe when the button is clicked
+      $("#input-go").click(function() {
+        loadURL(url.value)
+      })
       // Disable the button if there isn't anything in the input box
       $("#input-url").keypress(function(e) {
         if (url.value != "") {
@@ -105,6 +108,7 @@
         // Load the URL when the enter key is pressed
         if (e.which == 13 && url.value != "") {
           loadURL(url.value);
+          return false; // Make sure that we don't accidentally submit a form
         }
       });
 

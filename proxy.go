@@ -103,7 +103,7 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 		}
 	}
 
-	if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" && prox.ConType.Parameters["charset"] != "" { // Does it say it's html with a valid charset
+	if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" && prox.ConType.Parameters["charset"] != "" && config.ModifyHTML { // Does it say it's html with a valid charset
 		resReader := strings.NewReader(string(prox.Body))
 		if prox.ConType.Parameters["charset"] != "utf-8" {
 			encoding := goenc.GetEncoding(prox.ConType.Parameters["charset"])
@@ -147,17 +147,12 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 			}
 		})
 
-		// prox.Document.Find("head").AppendHtml(`<script type="text/javascript" src="//` + config.ExternalURL + `/by-inj.js" data-bypass-modified="true"></script>`) // Inject our own JavaScript code
+		if config.StripIntegrityAttributes {
+			prox.Document.Find("*[integrity]").Each(func(i int, s *goquery.Selection) { // Modify all src attributes
+				s.RemoveAttr("integrity")
+			})
+		}
 
-		// Just get the scheme and host (eg. https://github.com)
-		// remoteBaseUrl := url.URL{
-		//	Scheme: prox.Url.Scheme,
-		//	Host: prox.Url.Host,
-		// }
-
-		// encodedUrl := base64.StdEncoding.EncodeToString(string(remoteBaseUrl))
-
-		// prox.Document.Find("head").AppendHtml(`<base src="` + config.ExternalURL + `/p/`+encodedUrl+`"></base>`) // Append a base URL as a backup for anything that we didn't catch and append
 		parsedhtml, err := goquery.OuterHtml(prox.Document.Selection)
 		if err != nil {
 			return &reqError{err, "Couldn't convert parsed document back to HTML.", 500}
@@ -167,11 +162,11 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 		for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
 			switch header {
 			case "Content-Security-Policy":
-				if !config.DisableCORS {
+				if !config.StripCORS {
 					resWriter.Header().Del(header)
 				}
 			case "X-Frame-Options":
-				if !config.AllowFraming {
+				if !config.StripFrameOptions {
 					resWriter.Header().Del(header)
 				}
 			case "Content-Type":
@@ -189,15 +184,15 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 		if err != nil {
 			return &reqError{err, "Couldn't write content to response.", 500}
 		}
-	} else if prox.ConType.Type == "text" && prox.ConType.Subtype == "css" {
+	} else if prox.ConType.Type == "text" && prox.ConType.Subtype == "css" && config.ModifyCSS {
 		for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
 			switch header {
 			case "Content-Security-Policy":
-				if !config.DisableCORS {
+				if !config.StripCORS {
 					resWriter.Header().Del(header)
 				}
 			case "X-Frame-Options":
-				if !config.AllowFraming {
+				if !config.StripFrameOptions {
 					resWriter.Header().Del(header)
 				}
 			case "Content-Type":
@@ -229,11 +224,11 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 		for header := range httpCliResp.Header { // Copy over headers from the http response to our http response writer
 			switch header {
 			case "Content-Security-Policy":
-				if !config.DisableCORS {
+				if !config.StripCORS {
 					resWriter.Header().Del(header)
 				}
 			case "X-Frame-Options":
-				if !config.AllowFraming {
+				if !config.StripFrameOptions {
 					resWriter.Header().Del(header)
 				}
 			case "Content-Type":
