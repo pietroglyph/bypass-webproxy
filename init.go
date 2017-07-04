@@ -5,13 +5,12 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/kardianos/osext"
 )
 
 type configuration struct { // The configuration type holds configuration data
@@ -36,12 +35,7 @@ type reqHandler func(http.ResponseWriter, *http.Request) *reqError
 var config configuration        // configuration for the entire program
 var fileCache map[string][]byte // Files cached in the memory, stored as byte slices in a map that takes strings for the file names
 
-func init() { // Init function
-	folderPath, err := osext.ExecutableFolder() // Figure out where we are in the filesystem to make specifying the location of the public directory easier
-	if err != nil {
-		folderPath = ""          // If this doesn't work it's not a huge deal and we can just set the folder path to an empty string and print an error message
-		fmt.Println(err.Error()) // Print an error message but don't do anything else
-	}
+func init() {
 	// Configuration flags
 	flag.BoolVar(&config.CacheStatic, "cachestatic", true, "cache specific heavily used static files")
 	flag.BoolVar(&config.StripCORS, "cors", true, "strip Cross Origin Resource Policy headers")
@@ -53,12 +47,11 @@ func init() { // Init function
 	flag.BoolVar(&config.ModifyHTML, "HTML", true, "modify HTML to pass URLs through the webproxy")
 	flag.StringVar(&config.Host, "host", "localhost", "host to listen on for the webserver")
 	flag.StringVar(&config.Port, "port", "8000", "port to listen on for the webserver")
-	flag.StringVar(&config.PublicDir, "pubdir", folderPath+"/pub", "path to the static files the webserver should serve")
-	flag.StringVar(&config.TLSCertPath, "tls-cert", folderPath+"/cert.pem", "path to certificate file")
-	flag.StringVar(&config.TLSKeyPath, "tls-key", folderPath+"/key.pem", "path to private key for certificate")
+	flag.StringVar(&config.PublicDir, "pubdir", "pub", "path to the static files the webserver should serve")
+	flag.StringVar(&config.TLSCertPath, "tls-cert", "", "path to certificate file")
+	flag.StringVar(&config.TLSKeyPath, "tls-key", "", "path to private key for certificate")
 	flag.StringVar(&config.ExternalURL, "exturl", "", "external URL for formatting proxied HTML files to link back to the webproxy")
 	flag.Parse() // Parse the rest of the flags
-
 }
 
 func main() { // Main function
@@ -91,6 +84,12 @@ func main() { // Main function
 			panic(err)
 		}
 	} else if config.EnableTLS {
+		if config.TLSCertPath == "" {
+			panic(errors.New("tls-cert flag must not be empty"))
+		}
+		if config.TLSKeyPath == "" {
+			panic(errors.New("tls-key flag must not be empty"))
+		}
 		fmt.Println("Serving with TLS...")
 		err = http.ListenAndServeTLS(bind, config.TLSCertPath, config.TLSKeyPath, nil)
 		if err != nil {
@@ -106,7 +105,7 @@ func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allo
 			if config.Verbose && e.Error != nil {
 				fmt.Println(e.Error.Error(), "\n", e.Message) // Print the error message
 			}
-			if fileCache["404"] != nil { // Serve the cached file if one exists
+			if fileCache["404"] != nil && config.CacheStatic { // Serve the cached file if one exists
 				io.WriteString(w, string(fileCache["404"]))
 			} else { // Read a non-cached file from disk and serve it because there isn't a cached one
 				file, err := ioutil.ReadFile(config.PublicDir + "/404.html")

@@ -24,18 +24,18 @@ type reqError struct {
 }
 
 type proxy struct { // The Proxy type holds request and response details for the proxy request
-	RawUrl        string            // Raw URL that is formatted into Url
-	Url           *url.URL          // Formatted URL as the URL type
-	UrlString     string            // Formatted URL as a string
+	RawURL        string            // Raw URL that is formatted into URL
+	URL           *url.URL          // Formatted URL as the URL type
+	URLString     string            // Formatted URL as a string
 	Body          []byte            // The request Body as a byte slice
 	ConType       *contentType      // Content type as parsed into the ContentType type
 	Document      *goquery.Document // The body parsed into the Document type
 	FormattedBody string            // The final formatted body, converted into the a string form Document
 }
 
-var urlRegexp *regexp.Regexp = regexp.MustCompile(`url(?:\(['"]?)(.*?)(?:['"]?\))`) // Regular expression for matching "url()" contents in CSS
+var err error
 
-func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // Handle requests to /p/
+func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqError { // Handle requests to /p/
 	defer func() { // Recover from a panic if one occurred
 		if err := recover(); err != nil {
 			fmt.Println(err)
@@ -44,38 +44,38 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 	}()
 
 	var prox proxy
-	var err error
+	var urlRegexp *regexp.Regexp = regexp.MustCompile(`url(?:\(['"]?)(.*?)(?:['"]?\))`) // Regular expression for matching "url()" contents in CSS
 
-	urldec, err := base64.StdEncoding.DecodeString(reqHttp.URL.Query().Get("u"))
+	urldec, err := base64.StdEncoding.DecodeString(reqHTTP.URL.Query().Get("u"))
 	if err != nil {
 		return &reqError{err, "Couldn't decode provided URL parameter.", 400}
 	}
 
-	prox.RawUrl = string(urldec) // Get the value from the url key of a posted form
+	prox.RawURL = string(urldec) // Get the value from the url key of a posted form
 
-	prox.Url, err = url.Parse(prox.RawUrl) // Parse the raw URL value we were given into somthing we can work with
+	prox.URL, err = url.Parse(prox.RawURL) // Parse the raw URL value we were given into somthing we can work with
 	if err != nil {
 		return &reqError{err, "Couldn't parse provided URL.", 400}
 	}
 
-	if !prox.Url.IsAbs() { // Is our URL absolute or not?
-		prox.Url.Scheme = "http"
+	if !prox.URL.IsAbs() { // Is our URL absolute or not?
+		prox.URL.Scheme = "http"
 	} else { // If our URL is absolute, make sure the protocol is http(s)
-		if !strings.HasPrefix(prox.Url.Scheme, "http") {
-			prox.Url.Scheme = "http"
+		if !strings.HasPrefix(prox.URL.Scheme, "http") {
+			prox.URL.Scheme = "http"
 		}
 	}
-	prox.UrlString = prox.Url.String() // Turn our type URL back into a nice easy string, and store it in a variable
+	prox.URLString = prox.URL.String() // Turn our type URL back into a nice easy string, and store it in a variable
 
 	client := &http.Client{} // Make a new http client
 
-	request, err := http.NewRequest("GET", prox.UrlString, nil) // Make a new http GET request
+	request, err := http.NewRequest("GET", prox.URLString, nil) // Make a new http GET request
 	if err != nil {
 		return &reqError{err, "Couldn't make a new http request with provided URL.", 400}
 	}
 
 	// Use the client's User-Agent
-	request.Header.Set("User-Agent", reqHttp.Header.Get("User-Agent"))
+	request.Header.Set("User-Agent", reqHTTP.Header.Get("User-Agent"))
 
 	httpCliResp, err := client.Do(request) // Actually do the http request
 	if err != nil {
@@ -115,21 +115,21 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 			prox.Document, err = goquery.NewDocumentFromReader(decoder.Reader(resReader)) // Parse the response from our target website whose body has been freshly utf-8 encoded
 			if err != nil {                                                               // Looks like we can't parse this, let's just spit out the raw response
 				fmt.Fprint(resWriter, string(prox.Body))
-				fmt.Println(err.Error(), prox.Url)
+				fmt.Println(err.Error(), prox.URL)
 				return nil
 			}
 		} else {
 			prox.Document, err = goquery.NewDocumentFromReader(resReader)
 			if err != nil { // Looks like we can't parse this, let's just spit out the raw response
 				fmt.Fprint(resWriter, string(prox.Body))
-				fmt.Println(err.Error(), prox.Url)
+				fmt.Println(err.Error(), prox.URL)
 				return nil
 			}
 		}
 		prox.Document.Find("*[href]").Each(func(i int, s *goquery.Selection) { // Modify all href attributes
 			origlink, exists := s.Attr("href")
 			if exists {
-				formattedurl, err := formatUri(origlink, prox.UrlString, config.ExternalURL)
+				formattedurl, err := formatURI(origlink, prox.URLString, config.ExternalURL)
 				if err == nil {
 					s.SetAttr("href", formattedurl)
 					s.SetAttr("data-bypass-modified", "true")
@@ -139,7 +139,7 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 		prox.Document.Find("*[src]").Each(func(i int, s *goquery.Selection) { // Modify all src attributes
 			origlink, exists := s.Attr("src")
 			if exists {
-				formattedurl, err := formatUri(origlink, prox.UrlString, config.ExternalURL)
+				formattedurl, err := formatURI(origlink, prox.URLString, config.ExternalURL)
 				if err == nil {
 					s.SetAttr("src", formattedurl)
 					s.SetAttr("data-bypass-modified", "true")
@@ -174,7 +174,8 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 					resWriter.Header().Set(header, "text/html; charset=utf-8")
 				}
 			case "Content-Length":
-				resWriter.Header().Set(header, string(len([]byte(prox.FormattedBody)))) // Get length in bytes of the formatted converted body
+				// This will automatically be written for our modified page, and we don't want to copy it
+				break
 			default:
 				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
 			}
@@ -198,21 +199,22 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 			case "Content-Type":
 				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
 			case "Content-Length":
-				resWriter.Header().Set(header, string(len(prox.Body))) // Get length in bytes of the formatted converted body
+				// This will automatically be written for our modified page, and we don't want to copy it
+				break
 			default:
 				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
 			}
 		}
 
-		replFunc := func(origUri string) string {
-			submatch := urlRegexp.FindStringSubmatch(origUri)[1]                 // This is how we get the regex's capture group (we get google.com out of url("google.com)
-			fUri, err := formatUri(submatch, prox.UrlString, config.ExternalURL) // Fully format the URI
-			fmt.Println(origUri)
+		replFunc := func(origURI string) string {
+			submatch := urlRegexp.FindStringSubmatch(origURI)[1]                 // This is how we get the regex's capture group (we get google.com out of url("google.com)
+			fURI, err := formatURI(submatch, prox.URLString, config.ExternalURL) // Fully format the URI
+			fmt.Println(origURI)
 			if err != nil {
 				fmt.Println(err)
-				return origUri // If we can't format it just return the original
+				return origURI // If we can't format it just return the original
 			}
-			return "url('" + fUri + "')" // We also need to add the url() part back in
+			return "url('" + fURI + "')" // We also need to add the url() part back in
 		}
 		replacedBody := urlRegexp.ReplaceAllStringFunc(string(prox.Body), replFunc)
 		_, err = fmt.Fprint(resWriter, replacedBody)
@@ -233,8 +235,6 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 				}
 			case "Content-Type":
 				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
-			case "Content-Length":
-				resWriter.Header().Set(header, string(len(prox.Body))) // Get length in bytes of the formatted converted body
 			default:
 				resWriter.Header().Set(header, httpCliResp.Header.Get(header))
 			}
@@ -249,7 +249,7 @@ func proxyHandler(resWriter http.ResponseWriter, reqHttp *http.Request) *reqErro
 	return nil
 }
 
-func static(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { // Handle everything else to the root /
+func static(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqError { // Handle everything else to the root /
 	defer func() { // Recover from a panic if one occurred
 		if err := recover(); err != nil {
 			fmt.Println(err)
@@ -258,10 +258,9 @@ func static(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { //
 	}()
 
 	var file []byte
-	var err error
 
-	if reqHttp.URL.Path == "/" {
-		if fileCache["index"] != nil {
+	if reqHTTP.URL.Path == "/" {
+		if fileCache["index"] != nil && config.CacheStatic {
 			file = fileCache["index"]
 		} else {
 			file, err = ioutil.ReadFile(config.PublicDir + "/index.html")
@@ -270,11 +269,12 @@ func static(resWriter http.ResponseWriter, reqHttp *http.Request) *reqError { //
 			}
 		}
 	} else {
-		file, err = ioutil.ReadFile(config.PublicDir + reqHttp.URL.Path)
+		file, err = ioutil.ReadFile(config.PublicDir + reqHTTP.URL.Path)
 		if err != nil {
 			return &reqError{err, "File not found.", 404}
 		}
 	}
+
 	_, err = fmt.Fprint(resWriter, string(file))
 	if err != nil {
 		return &reqError{err, "Couldn't write a response.", 500}
