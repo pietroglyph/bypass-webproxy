@@ -45,14 +45,17 @@ func formatURI(rawurl string, host string, baseurl string) (string, error) { // 
 		return "", errors.New("main: couldn't parse provided URL in order to format it")
 	}
 	if parsedurl.IsAbs() {
-		if !strings.HasPrefix(parsedurl.Scheme, "http") {
+		if !strings.HasPrefix(parsedurl.Scheme, "http") && parsedurl.Scheme != "data" { // We use the prefix because it http and https are valid
 			parsedurl.Scheme = "http"
+		} else if parsedurl.Scheme == "data" { // Don't touch base64 encoded data URIs
+			return rawurl, nil
 		}
 	} else {
 		base, err := url.Parse(host)
 		if err != nil {
 			return "", errors.New("main: couldn't parse provided host ( \"base\" ) in order to resolve a reference")
 		}
+		// We don't need to check for data URIs here because they should be interpreted as absolute
 		if !strings.HasPrefix(parsedurl.Scheme, "http") {
 			base.Scheme = "http"
 		}
