@@ -11,4 +11,21 @@ A simple webproxy written in Go that uses Goquery to parse and modify proxied HT
 
 ## Building
 
-_TODO: Building Bypass from source_
+[Install Go](https://golang.org/doc/install) and [set the `$GOPATH` environment variable](https://golang.org/doc/code.html#GOPATH).
+
+Run the following commands (assumes that you're using BASH):
+1. ` $ go get github.com/pietroglyph/bypass-webproxy`
+2. ` $ cd $GOPATH/src/github.com/pietroglyph/bypass-webproxy`
+3. ` $ go get -d ./...`
+4. ` $ go install`
+
+## Usage
+
+With the defualt arguments, your working directory when running Bypass needs to contain a directory called `pub`, if you want to have a working web interface. You probably want the `pub` folder in Bypass' source directory.
+
+The following should get Bypass running if you've already built it:
+1. ` $ cd $GOPATH/src/github.com/pietroglyph/bypass-webproxy`
+2. ` $ $GOPATH/bin/bypass-webproxy`
+3. Open http://localhost:8000 in your favorite browser
+
+To see all the possible arguments type ` $ $GOPATH/bin/bypass-webproxy -h`.
