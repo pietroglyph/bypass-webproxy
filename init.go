@@ -41,7 +41,7 @@ func init() {
 	flag.BoolVar(&config.StripCORS, "cors", true, "strip Cross Origin Resource Policy headers")
 	flag.BoolVar(&config.EnableTLS, "tls", false, "enable serving with TLS (https)")
 	flag.BoolVar(&config.Verbose, "verbose", false, "enable printing 404 errors to STDOUT")
-	flag.BoolVar(&config.StripFrameOptions, "frameoptions", true, "strip Frame Options headers to allow framing (if disabled this will break pub/index.html")
+	flag.BoolVar(&config.StripFrameOptions, "frameoptions", true, "strip Frame Options headers to allow framing (if disabled this will break pub/index.html)")
 	flag.BoolVar(&config.StripIntegrityAttributes, "integrity", true, "strip 'integrity' attributes in HTML")
 	flag.BoolVar(&config.ModifyCSS, "css", true, "modify CSS to pass URLs through the webproxy")
 	flag.BoolVar(&config.ModifyHTML, "HTML", true, "modify HTML to pass URLs through the webproxy")
