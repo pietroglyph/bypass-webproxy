@@ -126,7 +126,7 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 		}
 		resWriter.Header().Set(curHeader, httpCliResp.Header.Get(curHeader))
 	}
-	resWriter.Header().Set("Access-Control-Allow-Origin", config.ExternalURL) // This always needs to be set
+	resWriter.Header().Set("Access-Control-Allow-Origin", "*") // This always needs to be set
 
 	if prox.ConType.Type == "text" && prox.ConType.Subtype == "html" && prox.ConType.Parameters["charset"] != "" && config.ModifyHTML { // Does it say it's html with a valid charset
 		resReader := strings.NewReader(string(prox.Body))
@@ -171,6 +171,7 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 				}
 			}
 		})
+		// TODO: Implement [poster] and [srcset]
 
 		if config.StripIntegrityAttributes {
 			prox.Document.Find("*[integrity]").Each(func(i int, s *goquery.Selection) { // Remove integrity attributes, because we modify CSS
