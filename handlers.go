@@ -13,7 +13,10 @@ import (
 	"regexp"
 	"strings"
 
+	"golang.org/x/net/html"
+
 	"github.com/PuerkitoBio/goquery"
+	"github.com/lukasbob/srcset"
 	goenc "github.com/mattn/go-encoding"
 )
 
@@ -45,6 +48,16 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 
 	var prox proxy
 	urlRegexp := regexp.MustCompile(`url(?:\(['"]?)(.*?)(?:['"]?\))`) // Regular expression for matching "url()" contents in CSS
+
+	replFunc := func(origURI string) string {
+		submatch := urlRegexp.FindStringSubmatch(origURI)[1]                // This is how we get the regex's capture group (we get google.com out of url("google.com)
+		fURI, err := formatURI(submatch, prox.FinalURL, config.ExternalURL) // Fully format the URI
+		if err != nil {
+			fmt.Println(err)
+			return origURI // If we can't format it just return the original
+		}
+		return "url('" + fURI + "')" // We also need to add the url() part back in
+	}
 
 	urldec, err := base64.StdEncoding.DecodeString(reqHTTP.URL.Query().Get("u"))
 	if err != nil {
@@ -152,6 +165,11 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 			}
 		}
 		prox.Document.Find("*[href]").Each(func(i int, s *goquery.Selection) { // Modify all href attributes
+			if len(s.Parent().Nodes) > 0 && s.Parent().Nodes[0].Type == html.ElementNode {
+				if s.Parent().Nodes[0].Data == "svg" { // hrefs are different in SVGs
+					return
+				}
+			}
 			origlink, exists := s.Attr("href")
 			if exists {
 				formattedurl, err := formatURI(origlink, prox.FinalURL, config.ExternalURL)
@@ -171,7 +189,40 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 				}
 			}
 		})
-		// TODO: Implement [poster] and [srcset]
+		prox.Document.Find("*[srcset]").Each(func(i int, s *goquery.Selection) { // Modify all srcset attributes
+			origlink, exists := s.Attr("srcset")
+			if exists {
+				srcset := srcset.Parse(origlink)
+				replacedurl := origlink
+				for i := range srcset {
+					formattedurl, err := formatURI(srcset[i].URL, prox.FinalURL, config.ExternalURL)
+					if err == nil {
+						fmt.Println(formattedurl)
+						replacedurl = strings.Replace(replacedurl, srcset[i].URL, formattedurl, 1)
+						s.SetAttr("srcset", replacedurl)
+						s.SetAttr("data-bypass-modified", "true")
+					}
+				}
+			}
+		})
+		prox.Document.Find("*[style]").Each(func(i int, s *goquery.Selection) { // Modify all srcset attributes
+			style, exists := s.Attr("style")
+			if exists {
+				replacedStyle := urlRegexp.ReplaceAllStringFunc(style, replFunc)
+				s.SetAttr("style", replacedStyle)
+				s.SetAttr("data-bypass-modified", "true")
+			}
+		})
+		prox.Document.Find("*[poster]").Each(func(i int, s *goquery.Selection) { // Modify all poster attributes
+			origlink, exists := s.Attr("poster")
+			if exists {
+				formattedurl, err := formatURI(origlink, prox.FinalURL, config.ExternalURL)
+				if err == nil {
+					s.SetAttr("poster", formattedurl)
+					s.SetAttr("data-bypass-modified", "true")
+				}
+			}
+		})
 
 		if config.StripIntegrityAttributes {
 			prox.Document.Find("*[integrity]").Each(func(i int, s *goquery.Selection) { // Remove integrity attributes, because we modify CSS
@@ -190,15 +241,6 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 			return &reqError{err, "Couldn't write content to response.", 500}
 		}
 	} else if prox.ConType.Type == "text" && prox.ConType.Subtype == "css" && config.ModifyCSS {
-		replFunc := func(origURI string) string {
-			submatch := urlRegexp.FindStringSubmatch(origURI)[1]                // This is how we get the regex's capture group (we get google.com out of url("google.com)
-			fURI, err := formatURI(submatch, prox.FinalURL, config.ExternalURL) // Fully format the URI
-			if err != nil {
-				fmt.Println(err)
-				return origURI // If we can't format it just return the original
-			}
-			return "url('" + fURI + "')" // We also need to add the url() part back in
-		}
 		replacedBody := urlRegexp.ReplaceAllStringFunc(string(prox.Body), replFunc)
 		_, err = fmt.Fprint(resWriter, replacedBody)
 		if err != nil {
