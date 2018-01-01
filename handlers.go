@@ -79,6 +79,15 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 		}
 	}
 
+	if prox.ReqURL.Port() != "80" && prox.ReqURL.Port() != "443" && prox.ReqURL.Port() != "" {
+		return &reqError{nil, "Requests on ports other than 80 and 443 are forbidden to mitigate the possibility of port scanning as a result of the SSRF vulnerability inherent in this application's design.", 403}
+	}
+
+	err = isAllowedURL(prox.ReqURL)
+	if err != nil {
+		return &reqError{err, "You cannot request certain special IPs to mitigate the SSRF vulnerability inherent in this application's design.", 403}
+	}
+
 	client := &http.Client{} // Make a new http client
 
 	request, err := http.NewRequest("GET", prox.ReqURL.String(), nil) // Make a new http GET request

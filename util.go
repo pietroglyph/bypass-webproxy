@@ -7,6 +7,8 @@ package main
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"net"
 	"net/url"
 	"strings"
 )
@@ -74,4 +76,49 @@ func formatURI(rawurl string, host string, baseurl string) (string, error) { // 
 	q.Add("u", encodedurl)
 	parsedProxyHost.RawQuery = q.Encode()
 	return parsedProxyHost.String(), nil
+}
+
+func isAllowedURL(targetURL *url.URL) error {
+	var ips []net.IP
+	noLookupIP := net.ParseIP(targetURL.Hostname())
+	if noLookupIP == nil {
+		ips, err = net.LookupIP(targetURL.Hostname())
+		if err != nil {
+			return err
+		}
+	} else {
+		ips = make([]net.IP, 1)
+		ips[0] = noLookupIP
+	}
+
+	for _, ip := range ips {
+		// Check for local network IPs
+		switch {
+		// Loopback address
+		case ip.IsLoopback():
+			return fmt.Errorf("Disallowed target")
+		// Link-local unicast
+		case ip.IsLinkLocalUnicast():
+			return fmt.Errorf("Disallowed target")
+		// Link-local multicast
+		case ip.IsLinkLocalMulticast():
+			return fmt.Errorf("Disallowed target")
+		// Private network (10.0.0.0/8)
+		case len(ip) == 4 && ip[0] == 10:
+			return fmt.Errorf("Disallowed target")
+		// Private network (Carrier-grade NAT; 100.64.0.0/10)
+		case len(ip) == 4 && ip[0] == 100 && ip[1] >= 64 && ip[1] <= 127:
+			return fmt.Errorf("Disallowed target")
+		// Private network (172.16.0.0/12)
+		case len(ip) == 4 && ip[0] == 172 && ip[1] >= 16 && ip[1] <= 31:
+			return fmt.Errorf("Disallowed target")
+		// Private network (192.168.0.0/16)
+		case len(ip) == 4 && ip[0] == 192 && ip[1] == 16:
+			return fmt.Errorf("Disallowed target")
+		// Private network (fc00::/7)
+		case len(ip) == 16 && (ip[0] == 0xfc || ip[0] == 0xfd):
+			return fmt.Errorf("Disallowed target")
+		}
+	}
+	return nil
 }
