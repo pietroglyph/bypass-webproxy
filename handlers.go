@@ -100,7 +100,10 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 		return &reqError{err, "Couldn't make a new http request with provided URL.", 400}
 	}
 
-	request.Header.Set("User-Agent", "Mozilla/5.0 ("+runtime.Version()+") Bypass-Webproxy/1.0 (+https://github.com/pietroglyph/bypass-webproxy)")
+	//request.Header.Set("User-Agent", "Mozilla/5.0 ("+runtime.Version()+") Bypass-Webproxy/1.0 (+https://github.com/pietroglyph/bypass-webproxy)")
+	// Above is the correct user agent that we should use. Disappointingly, websites
+	// sniff this and cause problems. We compromise by giving them the string below.
+	request.Header.Set("User-Agent", reqHTTP.Header.Get("User-Agent")+" ("+runtime.Version()+") Bypass-Webproxy/1.0 (+https://github.com/pietroglyph/bypass-webproxy)")
 	request.Header.Set("X-Forwarded-For", reqHTTP.RemoteAddr)
 	request.Header.Set("Forwarded", "for="+string(reqHTTP.RemoteAddr))
 
