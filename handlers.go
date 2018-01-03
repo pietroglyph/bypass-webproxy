@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -71,8 +72,12 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 		return &reqError{err, "Couldn't parse provided URL.", 400}
 	}
 
-	if !prox.ReqURL.IsAbs() { // Is our URL absolute or not?
+	if !prox.ReqURL.IsAbs() {
 		prox.ReqURL.Scheme = "http"
+		prox.ReqURL, err = url.Parse(prox.ReqURL.String()) // This is a bit hacky, but it seems to be the only way to get this to work
+		if err != nil {
+			return &reqError{err, "Please use an absolute URL (include http[s] and the domain name).", 400}
+		}
 	} else { // If our URL is absolute, make sure the protocol is http(s)
 		if !strings.HasPrefix(prox.ReqURL.Scheme, "http") {
 			prox.ReqURL.Scheme = "http"
@@ -95,8 +100,9 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 		return &reqError{err, "Couldn't make a new http request with provided URL.", 400}
 	}
 
-	// Use the client's User-Agent
-	request.Header.Set("User-Agent", reqHTTP.Header.Get("User-Agent"))
+	request.Header.Set("User-Agent", "Mozilla/5.0 ("+runtime.Version()+") Bypass-Webproxy/1.0 (+https://github.com/pietroglyph/bypass-webproxy)")
+	request.Header.Set("X-Forwarded-For", reqHTTP.RemoteAddr)
+	request.Header.Set("Forwarded", "for="+string(reqHTTP.RemoteAddr))
 
 	httpCliResp, err := client.Do(request) // Actually do the http request
 	if err != nil {
