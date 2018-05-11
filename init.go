@@ -28,8 +28,8 @@ type configuration struct { // The configuration type holds configuration data
 
 type reqHandler func(http.ResponseWriter, *http.Request) *reqError
 
-var config configuration        // configuration for the entire program
-var fileCache map[string][]byte // Files cached in the memory, stored as byte slices in a map that takes strings for the file names
+var config configuration // configuration for the entire program
+var notFoundPage []byte  // Cached 404 page
 
 func init() {
 	// Configuration flags
@@ -50,27 +50,19 @@ func init() {
 	flag.Parse() // Parse the rest of the flags
 }
 
-func main() { // Main function
-
-	var err error
-
+func main() { // Main functions
 	if config.ExternalURL == "" {
 		config.ExternalURL = "http://" + config.Host + ":" + config.Port // If nothing is specified, use the default host and port
 	}
 
-	fileCache = make(map[string][]byte) // Make the map for caching files
-	if config.CacheStatic == true {     // Cache certain static files if they exist and if config.CacheStatic is set to true
-		fileCache["index"], err = ioutil.ReadFile(config.PublicDir + "/index.html")
+	if config.CacheStatic == true { // Cache certain static files if they exist and if config.CacheStatic is set to true
+		notFoundPage, err = ioutil.ReadFile(config.PublicDir + "/404.html")
 		if err != nil {
-			fileCache["index"] = nil
-		}
-		fileCache["404"], err = ioutil.ReadFile(config.PublicDir + "/404.html")
-		if err != nil {
-			fileCache["404"] = nil
+			panic(err)
 		}
 	}
 	// Create a HTTP Server, and handle requests and errors
-	http.Handle("/", reqHandler(static))
+	http.Handle("/", http.FileServer(http.Dir(config.PublicDir)))
 	http.Handle("/p/", reqHandler(proxyHandler))
 	bind := fmt.Sprintf("%s:%s", config.Host, config.Port)
 	fmt.Printf("Bypass listening on %s...\n", bind)
@@ -101,8 +93,8 @@ func (fn reqHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { // Allo
 			if config.Verbose && e.Error != nil {
 				fmt.Println(e.Error.Error(), "\n", e.Message) // Print the error message
 			}
-			if fileCache["404"] != nil && config.CacheStatic { // Serve the cached file if one exists
-				io.WriteString(w, string(fileCache["404"]))
+			if notFoundPage != nil && config.CacheStatic { // Serve the cached file if one exists
+				io.WriteString(w, string(notFoundPage))
 			} else { // Read a non-cached file from disk and serve it because there isn't a cached one
 				file, err := ioutil.ReadFile(config.PublicDir + "/404.html")
 				if err != nil {

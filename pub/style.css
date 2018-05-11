@@ -29,5 +29,5 @@ body {
 }
 
 #content-frame {
-  display: none;
+  display: none !important;
 }

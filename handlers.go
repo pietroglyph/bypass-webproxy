@@ -269,36 +269,3 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 
 	return nil
 }
-
-func static(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqError { // Handle everything else to the root /
-	defer func() { // Recover from a panic if one occurred
-		if err := recover(); err != nil {
-			fmt.Println(err)
-			fmt.Fprint(resWriter, err)
-		}
-	}()
-
-	var file []byte
-
-	if reqHTTP.URL.Path == "/" {
-		if fileCache["index"] != nil && config.CacheStatic {
-			file = fileCache["index"]
-		} else {
-			file, err = ioutil.ReadFile(config.PublicDir + "/index.html")
-			if err != nil {
-				return &reqError{err, "File not found.", 404}
-			}
-		}
-	} else {
-		file, err = ioutil.ReadFile(config.PublicDir + reqHTTP.URL.Path)
-		if err != nil {
-			return &reqError{err, "File not found.", 404}
-		}
-	}
-
-	_, err = fmt.Fprint(resWriter, string(file))
-	if err != nil {
-		return &reqError{err, "Couldn't write a response.", 500}
-	}
-	return nil
-}
