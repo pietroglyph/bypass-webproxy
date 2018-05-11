@@ -1,0 +1,33 @@
+body {
+  font-family: Helvetica, Arial, sans-serif !important;
+}
+
+.form-group.url {
+  width: 40%;
+}
+
+.form-group.options {
+  width: 59%;
+}
+
+.input-group-btn {
+  width: 0px !important;
+}
+
+.btn.options {
+  width: 20%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.input-group {
+  width: 100%;
+}
+
+.btn-group {
+  width: 100%;
+}
+
+#content-frame {
+  display: none;
+}

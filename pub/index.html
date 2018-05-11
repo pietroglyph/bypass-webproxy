@@ -4,46 +4,17 @@
 <head lang="en">
     <title>Bypass</title>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport"><!-- Latest compiled and minified CSS -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport">
+
     <link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" rel="stylesheet"><!-- Latest minified jQuery -->
+    <link href="/style.css">
 
-    <script src="https://code.jquery.com/jquery-3.1.0.min.js">
-    </script><!-- Latest compiled and minified JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha512-ab3ad9a98fe431508461ebbf8029bc536f34d16cfef8b4c62b8a62b56fe2b30a426e3c3186c994c2578bd585da1c89a9b421c6d2f27053b2f2ed13b0dd9428c3"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha512-8b3b64a1bb2f9e329f02d4cd7479065630184ebaed942ee61a9ff9e1ce34c28c0eecb854458977815cf3704a8697fa8a5d096d2761f032b74b70d51da3e37f45"></script>
+    <script src="/script.js"></script>
 
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
-    </script><!-- Give a fancy shmancy favicon -->
+    <!-- Give a fancy shmancy favicon -->
     <link href='/favicon.png' rel='shortcut icon' type='image/x-icon'>
-    <style>
-    body {
-      font-family: Helvetica, Arial, sans-serif !important;
-    }
-
-    .form-group.url {
-      width: 40%;
-    }
-
-    .form-group.options {
-      width: 59%;
-    }
-
-    .input-group-btn {
-      width: 0px !important;
-    }
-
-    .btn.options {
-      width: 20%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .input-group {
-      width: 100%;
-    }
-
-    .btn-group {
-      width: 100%;
-    }
-    </style>
 </head>
 
 <body>
@@ -78,96 +49,6 @@
             </form>
         </div>
     </div>
-    <iframe id="content-frame" name="content-frame" sandbox="allow-scripts" style="display: none;"></iframe>
-    <script>
-    var hidden = true
-    var sandboxAttrState = {
-      "allow-scripts": true
-    }
-    $(document).ready(function() { // Register callback's once we're ready
-      var url = document.getElementById("input-url");
-
-      // Load the URL in the iframe when the "Go" button is clicked
-      $("#input-go").click(function() {
-        loadURL(url.value,true);
-      })
-      // Load the URL in a new tab when the open in new tab button is clicked
-      $("#input-open").click(function() {
-        loadURL(url.value,false);
-      });
-
-      // Redirect the page to the URL when the open
-      // Disable the button if there isn't anything in the input box
-      $("#input-url").keypress(function(e) {
-        var code = e.keyCode || e.which; // For cross-browser inconsistencies
-
-        // Load the URL when the enter key is pressed
-        if (code == 13 && url.value != "") {
-          loadURL(url.value,true);
-          return false; // Make sure that we don't accidentally submit a form
-        }
-      });
-
-      // Enable/disable the buttons next to the input, this happens once the text is actually changed
-      $("#input-url").on("input", function(e) { // This doesn't support < IE9... Too bad.
-        if (e.target.value != "") {
-          $("*.input-side").removeClass("disabled");
-        } else {
-          $("*.input-side").addClass("disabled");
-        }
-      });
-
-      // Keep the iframe sized to fit below the header seamlessly (without non-iframe overflow)
-      $(window).resize(function() {
-        if (!hidden) {
-          $("#content-frame").height($(window).height() - $("#main-container").height() - 1);
-        }
-      });
-
-      // Detect anything with the ID opt getting changed (checked/unchecked)
-      $("*#opt").change(function() {
-        sandboxAttrState[$(this).data("attr-value")] = this.checked; // sandboxAttrState keeps track of the value of these
-        var attrString = "";
-        // Serialize the entire sandboxAttrState for the sandbox attribute of the iframe
-        for (var key in sandboxAttrState) {
-          if (sandboxAttrState.hasOwnProperty(key) && sandboxAttrState[key]) { // hasOwnProperty is because JavaScript is weakly typed and we could get a type we don't want
-            attrString += key + " ";
-          }
-        }
-        // Totally reset the sandbox attribue to our new serialized value
-        $("#content-frame").attr("sandbox", attrString);
-      });
-    });
-
-
-    function loadURL(targurl, inFrame) {
-      if (targurl != "") {
-        if (hidden && inFrame) {
-          hidden = false;
-          $(".page-header").slideUp(500, function() {
-            $(".jumbotron").css({
-              backgroundColor: "rgba(0,0,0,0)",
-              padding: "0px",
-              marginBottom: "2px"
-            });
-            $("#content-frame").height($(window).height() - $("#main-container").height() - 1);
-          }); // Get rid of the header, then make the jumbotron small once that's done
-          $("#content-frame").css({
-            width: "100%",
-            display: "block",
-            border: "none",
-          });
-        }
-        var encodedURL = window.btoa(targurl); // Encode the URL in Base64
-        var url = window.location.protocol + "//" + window.location.host + "/p/?u=" + encodedURL; // This makes a number of assumptions, and it would be better for the backend to replace a value here... But it's not that important
-
-        if (inFrame) {
-          $("#content-frame").attr("src", url);
-        } else {
-          window.open(url,"_blank")
-        }
-      }
-    }
-    </script>
+    <iframe id="content-frame" name="content-frame" sandbox="allow-scripts"></iframe>
 </body>
 </html>
