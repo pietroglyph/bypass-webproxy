@@ -4,7 +4,7 @@ var hidden = true
 var sandboxAttrState = {
   "allow-scripts": true
 }
-$(document).ready(function() { // Register callback's once we're ready
+$(document).ready(function() { // Register callbacks once we're ready
   var url = document.getElementById("input-url");
 
   // Load the URL in the iframe when the "Go" button is clicked
@@ -27,6 +27,8 @@ $(document).ready(function() { // Register callback's once we're ready
       return false; // Make sure that we don't accidentally submit a form
     }
   });
+
+  $("#input-url").val("");
 
   // Enable/disable the buttons next to the input, this happens once the text is actually changed
   $("#input-url").on("input", function(e) { // This doesn't support < IE9... Too bad.
@@ -74,9 +76,9 @@ function loadURL(targurl, inFrame) {
       }); // Get rid of the header, then make the jumbotron small once that's done
       $("#content-frame").css({
         width: "100%",
-        display: "block",
         border: "none",
       });
+      $("#content-frame").removeClass("hidden");
     }
     var encodedURL = window.btoa(targurl); // Encode the URL in Base64
     var url = window.location.protocol + "//" + window.location.host + "/p/?u=" + encodedURL; // This makes a number of assumptions, and it would be better for the backend to replace a value here... But it's not that important

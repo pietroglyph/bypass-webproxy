@@ -28,6 +28,10 @@ body {
   width: 100%;
 }
 
-#content-frame {
+#content-frame.hidden {
   display: none !important;
+}
+
+.jumbotron {
+  position: relative;
 }

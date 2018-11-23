@@ -211,7 +211,6 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 				for i := range srcset {
 					formattedurl, err := formatURI(srcset[i].URL, prox.FinalURL, config.ExternalURL)
 					if err == nil {
-						fmt.Println(formattedurl)
 						replacedurl = strings.Replace(replacedurl, srcset[i].URL, formattedurl, 1)
 						s.SetAttr("srcset", replacedurl)
 						s.SetAttr("data-bypass-modified", "true")

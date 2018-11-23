@@ -7,7 +7,7 @@
     <meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport">
 
     <link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" rel="stylesheet"><!-- Latest minified jQuery -->
-    <link href="/style.css">
+    <link rel="stylesheet" href="/style.css">
 
     <script crossorigin="anonymous" src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq"></script>
     <script crossorigin="anonymous" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"></script>
@@ -18,6 +18,9 @@
 </head>
 
 <body>
+    <noscript>
+      <link rel="stylesheet" href="/noscript.css">
+    </noscript>
     <div class="container-fluid" id="main-container">
         <div class="page-header">
             <h1>Bypass</h1>
@@ -39,8 +42,6 @@
                     </div>
                     <!-- /input-group -->
                 </div>
-
-
                 <div class="form-group options">
                     <div class="btn-group" data-toggle="buttons">
                         <label class="btn btn-default options active"><input autocomplete="off" checked data-attr-value="allow-scripts" id="opt" type="checkbox">&nbsp;Enable&nbsp;Scripts</label> <label class="btn btn-default options"><input autocomplete="off" data-attr-value="allow-popups" id="opt" type="checkbox">&nbsp;Enable&nbsp;Popups</label> <label class="btn btn-default options"><input autocomplete="off" data-attr-value="allow-pointer-lock" id="opt" type="checkbox">&nbsp;Enable&nbsp;Pointer Lock</label> <label class="btn btn-default options"><input autocomplete="off" data-attr-value="allow-forms" id="opt" type="checkbox">&nbsp;Enable&nbsp;Form&nbsp;Submission</label> <label class="btn btn-default options"><input autocomplete="off" data-attr-value="allow-top-navigation" id="opt" type="checkbox">&nbsp;Enable&nbsp;Top&nbsp;Navigation</label>
@@ -49,6 +50,6 @@
             </form>
         </div>
     </div>
-    <iframe id="content-frame" name="content-frame" sandbox="allow-scripts"></iframe>
+    <iframe id="content-frame" class="hidden" name="content-frame" sandbox="allow-scripts"></iframe>
 </body>
 </html>
