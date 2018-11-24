@@ -80,8 +80,9 @@ function loadURL(targurl, inFrame) {
       });
       $("#content-frame").removeClass("hidden");
     }
-    var encodedURL = window.btoa(targurl); // Encode the URL in Base64
-    var url = window.location.protocol + "//" + window.location.host + "/p/?u=" + encodedURL; // This makes a number of assumptions, and it would be better for the backend to replace a value here... But it's not that important
+    let encodedTargetURL = window.btoa(targurl); // Encode the URL in Base64
+    let url = new URL(window.location.href);
+    url.searchParams.set(encodedTargetURL)
 
     if (inFrame) {
       $("#content-frame").attr("src", url);
