@@ -84,7 +84,7 @@ function loadURL(targurl, inFrame) {
     }
     let encodedTargetURL = window.btoa(targurl); // Encode the URL in Base64
     let url = new URL(window.location.href);
-    url.pathname = "/p/";
+    url.pathname += "p/";
     url.searchParams.set("u", encodedTargetURL);
 
     if (inFrame) {
