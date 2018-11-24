@@ -10,10 +10,12 @@ $(document).ready(function() { // Register callbacks once we're ready
   // Load the URL in the iframe when the "Go" button is clicked
   $("#input-go").click(function() {
     loadURL(url.value,true);
+    return false;
   })
   // Load the URL in a new tab when the open in new tab button is clicked
   $("#input-open").click(function() {
     loadURL(url.value,false);
+    return false;
   });
 
   // Redirect the page to the URL when the open
@@ -82,7 +84,8 @@ function loadURL(targurl, inFrame) {
     }
     let encodedTargetURL = window.btoa(targurl); // Encode the URL in Base64
     let url = new URL(window.location.href);
-    url.searchParams.set(encodedTargetURL)
+    url.pathname = "/p/";
+    url.searchParams.set("u", encodedTargetURL);
 
     if (inFrame) {
       $("#content-frame").attr("src", url);
