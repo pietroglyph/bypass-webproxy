@@ -226,6 +226,10 @@ func proxyHandler(resWriter http.ResponseWriter, reqHTTP *http.Request) *reqErro
 				s.SetAttr("data-bypass-modified", "true")
 			}
 		})
+		prox.Document.Find("style").Each(func(i int, s *goquery.Selection) {
+			replacedStyle := urlRegexp.ReplaceAllStringFunc(s.Text(), replFunc)
+			s.SetText(replacedStyle)
+		})
 		prox.Document.Find("*[poster]").Each(func(i int, s *goquery.Selection) { // Modify all poster attributes
 			origlink, exists := s.Attr("poster")
 			if exists {
